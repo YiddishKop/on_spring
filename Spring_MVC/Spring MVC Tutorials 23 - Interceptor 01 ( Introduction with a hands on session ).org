@@ -1,0 +1,76 @@
+#+TITLE: Spring MVC Tutorials 23 - Interceptor 01 ( Introduction with a hands on session )
+
+From this lecure, we introduce a new important concept: *Interceptor*.
+
+Some times, you access a website, but it appear "the website is now closed,
+please try access one hour later", something like this, this is what this
+lecture's content tell you do.
+
+Let's assume the requirement is " This Application should work on all week days
+except for Sunday". So any one request for this web page on Sunday, *before
+handling that request*, this application should perform a simple task of
+checking whether the request is made on Sunday or any other week day.
+
+If the request performed on Sunday, the website should not work, and response
+"Please try accessing it on any other week day!!"
+
+
+#+BEGIN_QUOTE
+The SpringMVC says, hey developers, for a requirement like this you want your
+application to *perform some task before* it starts handling or processing the
+request, you simply need to follow these *three* simple steps.
+#+END_QUOTE
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-04 22:15:18
+[[file:screenshot_2018-12-04_22-15-18.png]]
+
+
+* 第一步,创建类扩展拦截器适配器
+就按照上面的步骤来就可以了, 第一步创建一个扩展了 ~HandlerInterceptorAdatper~ 适
+配器的类. 实现其中的 ~preHandle~ 方法, 这个方法返回 true 就是通过; 返回 false 就
+是拒绝访问, 如果你希望在拒绝访问的时候在页面上显示 tips, 那么可以通过
+~response.getWriter().write("tips: xxxxxx")~ 方法. 到时候整个页面就只会显示这些.
+
+
+#+NAME: DayOfWeekBasedAccessInterceptor.java
+#+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+import java.util.Calendar;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+public class DayOfWeekBasedAccessInterceptor extends HandlerInterceptorAdapter{
+
+    @Override
+    public boolean preHandle(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Object handler) throws Exception{
+
+        Calendar cal = Calendar.getInstance();
+        int dayOfWeek = cal.get(cal.DAY_OF_WEEK); // getting the day on wich request is made
+        if(dayOfWeek == 1) {
+            //1 means Sunday;2 means Monday...;7 means Satday
+            response.getWriter().write("The website is closed on Sunday; please try accessing it" + "on any other week day!!!");
+            return false;
+        }
+        // if this method returns true then - application will further handler the request
+        // if this method returns false then - application will not further handle the request.
+        return true;
+    }
+}
+#+END_SRC
+
+* 在 FrontController 中注册这个拦截器
+
+然后还需要在 ~spring-dispatcher-servlet.xml~ 中注册这个 ~Interceptor~.
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <!-- 意思是告诉SpringMVC,请在处理任何请求之前先去这个类看看 -->
+  <mvc:interceptors>
+    <bean class="com.gontuseries.studentadmissioncontroller.DayOfWeekBasedAccessInterceptor" />
+  </mvc:interceptors>
+#+END_SRC

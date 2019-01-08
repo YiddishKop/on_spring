@@ -1,0 +1,4 @@
+#+TITLE: lec-16: A BeanFactoryPostProcessor
+
+By ~BeanFactoryPostProcessor~, we can get and modify every meta data declared in
+the ~SpringConfig.xml~ configuration file *programmatically*.

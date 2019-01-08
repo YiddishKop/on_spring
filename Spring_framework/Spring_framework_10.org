@@ -1,0 +1,170 @@
+#+TITLE: lec-10: Spring's Bean Scope
+
+
+you can sett bean scope in the Spring's configuration file.
+
+What's a Bean scope.
+
+You provide scope of a Bean in the spring's configuration file using Scope
+attribute with each bean definition.
+
+
+* 源码
+
+#+NAME: Restaurant.java
+#+BEGIN_SRC java
+  package org.gontuseries.springcore;
+
+  public class Restaurant {
+
+      // attr
+      private String welcomeNote;
+
+      // setter of attr
+      public void setWelcomeNote(String welcomeNote) {
+          this.welcomeNote = welcomeNote;
+      }
+
+      // action of this class
+      public void greetCustomer() {
+          System.out.println(welcomeNote);
+      }
+  }
+
+#+END_SRC
+
+
+这里 main 函数中我们创建了两个 Restaurant 对象, 其中一个设置了 attribute of
+Restaurant: ~restaurantObj1.setWelcomeNote("Object1 is setting welcome note
+property");~, 另外一个没有设置. 我们同时通过 ~greetCustomer()~ 函数来访问这个属
+性.毫无疑问, 按照非 Spring 创建对象的方式理解, 第二个 Restaurant 对象由于没有设
+置 ~welcomNote~ 属性, 该属性自然是 ~null~. 但是在 Spring 方式下创建对象/赋值属性
+/调用函数,都是被剥离的, 其中属性赋值这个部分的 "值" 是存放在由 XML 中的 Bean -->
+property 下的, 但是 Bean 只针对类进行声明, 那么这个 *属性值会用来给哪些对象初始
+化* 就存在多种解释了, 是不是以类似 "静态属性" 的方式适用于该类的全体对象, 还是只
+针对第一个被创建的对象, 这些东西就是由 Bean node 的 ~scope~ 属性来决定的.
+
+
+#+NAME: TestSpringProjectBeanScope.java
+#+BEGIN_SRC java
+  package org.gontuseries.springcore;
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+  public class TestSpringProjectBeanScope {
+
+      public static void main(String[] args) {
+          ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+          Restaurant restaurantObj1 = (Restaurant) context.getBean("restaurantBean");
+          restaurantObj1.setWelcomeNote("Object1 is setting welcome note property");
+          restaurantObj1.greetCustomer();
+
+          Restaurant restaurantObj2 = (Restaurant) context.getBean("restaurantBean");
+          restaurantObj2.greetCustomer();
+
+          System.out.println(restaurantObj1 == restaurantObj2);
+      }
+  }
+
+#+END_SRC
+
+
+Spring 给 *对象属性赋值* 有两种方式:
+1. 在 XML 中通过 *Bean* 在创建对象的过程中给属性赋值null . *然后写代码对象调用
+   setter 方法* 给属性赋值;
+1. 在 XML 中通过 *Bean -> property* 在创建对象的过程中给属性赋值property.value.
+
+
+#+BEGIN_SRC java
+Restaurant restaurantObj1 = (Restaurant) context.getBean("restaurantBean");
+restaurantObj1.setWelcomeNote("Object1 is setting welcome note property");
+restaurantObj1.greetCustomer();
+#+END_SRC
+
+
+#+BEGIN_SRC xml
+  <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" scope="prototype">
+     <property name="welcomeNote" value="Object1 is setting welcome note property">
+  </bean>
+#+END_SRC
+
+
+
+#+NAME: SpringConfig.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- scope property -->
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" scope="prototype">
+    </bean>
+
+  </beans>
+
+#+END_SRC
+
+
+For ~scope="prototype"~ ,this project will print out the string below in the
+console, when we run it in eclipse.
+- "Object1 is setting welcome note propery"
+- null
+- false
+
+For ~scope="singleton"~ ,this project will print out the string below in the
+console, when we run it in eclipse.
+- "Object1 is setting welcome note propery"
+- "Object1 is setting welcome note propery"
+- true
+
+*都是一个*
+
+~scope="singleton"~ : Spring provide the *same* instance when it is instanciated
+by ~getBean~. In other word, this is some like the *singleton pattern*.
+
+
+
+*各归各的*
+
+~scope="prototype"~ : Spring provide the *different* instance when it is
+instanciated by ~getBean~. In other word, this is some like the *singleton
+pattern*.
+
+
+关于这里 Spring 用 XML 来实现单例模式, 我有个疑问, 难道 Spring 想用 XML 文件配置
+的方式来实现所有的设计模式!
+
+* 总结
+如果想创建某个类的各种 *不同* 的对象, 需要做如下两件事情:
+
+1. XMl 设置 Bean 的 scope 属性为 ~scope="prototype"~
+2. main 函数代码中, 先通过 ~getBean~ 获取对象, 然后通过 ~setter~ 方法给该对象的
+   属性赋值.
+
+
+
+如果想创建某个类的各种 *不同* 对象给予 *相同的属性初始值*, 需要做如下两件事情:
+
+1. XMl 设置 Bean 的 scope 属性为 ~scope="prototype"~;
+2. XML 设置 property 的 value;
+3. main 函数代码中, 先通过 ~getBean~ 获取对象, 然后通过 ~setter~ 方法给该对象的
+   属性赋值.
+
+
+
+如果想创建某个类的 *单例* 对象并且给予 *初始值*, 需要做如下两件事情:
+
+1. XMl 设置 Bean 的 scope 属性为 ~scope="singleton"~;
+2. XML 设置 property 的 value;
+3. main 函数代码中, 先通过 ~getBean~ 获取对象, 然后通过 ~setter~ 方法给该对象的
+   属性赋值.
+
+
+
+如果想创建某个类的 *单例* 对象, 需要做如下两件事情:
+
+1. XMl 设置 Bean 的 scope 属性为 ~scope="singleton"~;
+2. main 函数代码中, 先通过 ~getBean~ 获取对象, 然后通过 ~setter~ 方法给该对象的
+   属性赋值.

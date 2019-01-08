@@ -1,0 +1,88 @@
+#+TITLE: Spring MVC Tutorials 22 - Form Validations 06 (More on custom Form Validation annotation...)
+
+SpringMVC says, hey developers, when you want to give a Annotation
+parameter(seem like ~@Annot(para=value)~), you simply define that parameter is
+the ~IsValidHobby.java~ (那个定义Annotation名字的源文件).
+
+#+NAME: IsValidHobby.java
+#+BEGIN_SRC java
+  public @interface IsValidHobby{
+      // 新添加的字段, 当你给 Annotation 参数时, 要注意与这里的类型保持一致.
+      String listOfValidHobbies();
+      String message() default "Please provide a valid Hobby;" +
+          "accepted hobbies are - Music, Football, Cricket and Hockey (choose anyone)";
+      Class<?>[] groups() default {};
+      Class<? extends Payload>[] payload() default {};
+  }
+#+END_SRC
+
+[注意]: 对这个 ~IsValidHobby.java~ 的进一步理解, 他就像是一个类型声明, 他只是声
+明了我这个类中有些什么东西, 并没有说这些东西该怎么用, 以及是什么值, 比如这里声明
+了 ~listOfValidHobbies~ 他只是 Annotation 的属性名, 以及属性值的类型 String, 并
+没有说明这个属性值是多少(谁使用Annotation谁赋值), 也没有说明该如何使用(交给对应
+的 ~Validator~); 而 ~HobbyValidator.java~ 是告诉我们该如何使用 ~IsValidHobby~ 中
+声明的元素.
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+  public class Student {
+      //...
+      @Size(min=2, max=30)
+      @IsValidHobby(listOfValidHobbies="Music|Football|Cricket|Hockey")
+      private String studentHobby;
+      //...
+  }
+#+END_SRC
+
+#+NAME: HobbyValidator.java
+#+BEGIN_SRC java
+  public class HobbyValidator implements ConstraintValidator<IsValidHobby, String> {
+
+      // 声明一个私有变量
+      private listOfValidHobbies;
+
+      // initialize 会先被执行用来从初始化该类, 然后才会调用 isValid 做判断.
+      @Override
+      public void initialize(IsValidHobby isValidHobby){
+          // Student's Annotation 的参数赋值传给
+          // -----> 完成IsValidHobby对象构建
+          // -----> HobbyValidator从IsValidHobby对象获取参数值, 用之做验证
+          listOfValidHobbies = isValidHobby.listOfValidHobbies();
+      }
+      @Override
+      public boolean isValid(String studentHobby, ConstraintValidatorContext ctx) {
+          if(studentHobby == null){
+              return false;
+          }
+          if(studentHobby.matches(listOfValidHobbies)){
+              return true;
+          } else {
+              return false;
+          }
+      }
+  }
+#+END_SRC
+
+Validator 的处理过程:
+1. 首先声明一个私有变量: 用来从 IsValidHobby 对象中获取 从 Student 传过来的
+   Annotation 参数值.
+2. 然后进入该 Validator 类的初始化(~initialize()~), 完成 Validator 对象初始化.
+3. 最后进入该 Validator 类的判别式(~isValid()~), 通过该私有变量的辅助, 完成对
+   Student 属性值 data binding 是否合法的判定.
+
+
+最后说一句, 如果我们想给予 Annotation parameter listOfValidHobbies 一个默认值,
+这样就不用每次都要输入 listOfValidHobbies 参数了.
+
+#+NAME: IsValidHobby.java
+#+BEGIN_SRC java
+String listOfValidHobbies() default "Music|Football|Cricket|Hockey";
+#+END_SRC
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+@IsValidHobby() // 括号可以带, 也可以不带
+private String studentHobby;
+#+END_SRC
+
+* 所有源码

@@ -1,0 +1,54 @@
+#+TITLE: lec-08: Dependency Injection using setter method way
+
+#+NAME: setter method way
+#+BEGIN_SRC java
+  package org.gontuseries.springcore
+
+  Interface IHotDrink {
+      public void prepareDrink();
+  }
+
+
+  Class Restaurant{
+      IHotDrink iHotDrink;
+
+      public void setIHotDrink(IHotDrink iHotDrink){
+          this.IHotDrink = iHotDrink;
+      }
+
+      public void welcomNote(){
+          System.out.println("welcome to our Restaurant!!!");
+      }
+  }
+
+  Class Tea implements IHotDrink{
+      @Override
+          public void prepareDrink(){
+          System.out.println("your hot drink is prepared!!!");
+      }
+  }
+
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.xxx;
+
+  Class TestSpringProject{
+      public static void main(String[] args){
+          ApplicationContext context = new XmlApplicationContext("SpringConfig.xml");
+          Restaurant restaurantObj = (Restaurant) context.getBean("Restaurant");
+          restaurantObj.prepareDrink();
+      }
+  }
+
+  // SpringConfig.xml
+
+  <Beans>
+  <Bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+      <property name="iHotDrink" ref="teaBean" />
+  </Bean>
+
+  <Bean id="teaBean" class="org.gontuseries.springcore.Tea">
+  </Bean>
+  </Beans>
+#+END_SRC
+
+XML ---> XMLApplicationContext ---> context ---> getBean ---> RestaurantObj ---> call method

@@ -1,0 +1,34 @@
+# -*- org-export-babel-evaluate: nil -*-
+#+PROPERTY: header-args :eval never-export
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/site.css" >
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:t html-preamble:t
+#+OPTIONS: H:3 num:nil ^:nil _:nil tags:not-in-toc
+#+TITLE: Spring MVC Tutorials 04 - Integrating Tomcat Apache server with an Eclipse IDE
+#+AUTHOR: yiddishkop
+#+EMAIL: yiddishkop@163.com
+
+
+windwo -> show view -> others -> Server -> open
+
+
+click the "Server pannel" on bottom of eclipse window
+
+
+first time install server: click the "No Servers are available. Click this line to create a new server"
+
+else: right click the Server pannel, choose new server.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-25 21:16:01
+[[file:screenshot_2018-11-25_21-16-01.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-25 21:19:20
+[[file:screenshot_2018-11-25_21-19-20.png]]
+
+
+then choose the installation directory of Server, say "~/apache-tomcat-9.0.13"
+in the following window.
+
+Right click the project name in "Project Explorer" in eclipse, and choose the
+"properties", and select "Targeted Runtimes", choose the server we build in
+previous steps, apply and close.

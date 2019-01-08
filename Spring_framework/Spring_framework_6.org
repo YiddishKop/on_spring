@@ -1,0 +1,175 @@
+#+TITLE: lec-06: injecting value into a Bean property
+
+
+#+NAME: version1: Restaurant.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+public class Restaurant {
+	public void greetCustomer() {
+		System.out.println("welcome to our restaurant");
+	}
+}
+  #+END_SRC
+
+#+NAME: version2: Restaurant.java
+#+BEGIN_SRC java
+    package org.gontuseries.springcore;
+
+    public class Restaurant {
+
+        // add this property
+        String welcomeNote;
+
+        // add this setter of property 'welcomeNote'
+        public void setWelcomeNote(String welcomeNote){
+            this.welcomeNote = welcomeNote;
+        }
+
+        // modify this to use property 'welcomeNote' for debug.
+        public void greetCustomer() {
+            System.out.println(welcomeNote);
+        }
+    }
+  #+END_SRC
+
+#+NAME: version1: SpringConfig.xml
+#+BEGIN_SRC xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  <bean id="restaruantBean" class="org.gontuseries.springcore.Restaruant">
+  </bean>
+</beans>
+#+END_SRC
+
+#+NAME: version2: SpringConfig.xml --- add 'property' tag
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+
+      <!-- add this property, declare its name and value. -->
+      <property name="welcomeNote" value="Welcome to our Restaurant!!!"/>
+    </bean>
+  </beans>
+#+END_SRC
+
+At runtime, when we request Spring Framework to provide us with a ~Restaurant~
+object int that test --- ~TestSpringProject.java~, Spring Framework will
+implicitly create the ~Restaurant~ object and then set its ~welcomeNote~
+property with the value you provide in the configuration file:
+~SpringConfig.xml~
+
+
+#+BEGIN_EXAMPLE
+                                        Spring context
+                                         /
+                                        /
+ create obj               TestSpringProject.java
+       +--------------    public void main
+       |
+       |                        |
+       |                        |
+       |                        ^  read in
+       |                        |
+       |
+       |                  SpringConfig.xml
+       |                   Bean id='',class=''
+       |                   property name='',value=''
+       |
+       |                        |
+       |                        |
+       |                        ^
+       |                        |
+       |
+       |                  Restaurant.java
+       +----------->--     attribute;
+                          setter methods of attr;
+
+#+END_EXAMPLE
+
+
+#+NAME: TestSpringProject.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestSpringProject {
+
+    public static void main(String[] args){
+
+        /**
+         * This statement is going to find and load SpringConfig.xml file
+         from our project into the application context;
+         */
+        ApplicationContext context =
+            new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+        Restaruant restaruantObj = (Restaruant) context.getBean("restaruantBean");
+
+        restaruantObj.greetCustomer();
+
+    }
+}
+#+END_SRC
+
+We're going to show how to set a property which is in the ~Restaurant~ class
+from the configuration file. What it means is we're going to *write a string
+property* in the ~Restaurant~ class, then *provide its value* from the
+configuration file
+
+#+BEGIN_EXAMPLE
+                            value
+Restaurant property <------------------- SpringConfig.xml
+#+END_EXAMPLE
+
+* Spring DI 方式类调用方法的步骤总结
+
+核心思想:
+
+总体来说,就是把一个 *类* 的权利进行剥离, 把 *类的定义* 与 *类的使用* 通过 XML 完
+全剥离开 --- *规划* 与 *施工* 完全剥离开.
+1. 剥离 *创建对象* 的权利 ---> XML
+2. 剥离 *属性赋值* 的权利 ---> XML
+3. 剥离 *方法调用* 的权利 ---> XML
+4. XML ---> context ---> 执行 *实例化(=属性赋值+创建对象)/方法调用*
+
+
+具体代码步骤与结构:
+
+1. Restaurant 属性不用初始化, 且必须提供公有 setter 方法;
+2. XML 文件中提供关于类(Bean)及其属性(property)的信息:
+
+   #+BEGIN_EXAMPLE
+   <Bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant"></Bean>
+             --------------         -------------------------------------
+             你给的名字               包名即目录名, XML 文件会在与自己同级目录中依次搜索
+             方便之后在主函数          org文件夹下的gontuseries文件夹下的springcore文
+             中引用                  件夹下的 Restaurant.java 文件
+   #+END_EXAMPLE
+
+| Keyword   | NodeName   | attr1 | attr2 |
+|-----------+------------+-------+-------|
+| class     | <class>    | id    | class |
+| attribute | <property> | name  | value |
+
+
+3. 主类(测试类), 首先声明 springframework.context.ApplicationContext 类型的引用
+   (eg: context), 然后通过 ~ClassPathXmlApplicationContext()~ 构造函数获取该子类
+   对象. 该对象可以通过 ~getBean()~ 方法获取 Restaurant 对象, 通过该对象调用其方
+   法.
+
+   #+BEGIN_EXAMPLE
+   file path                                           obj                         obj
+    |                                                   |                           |
+    v                                                   v                           v
+   XML ---> ClassPathXmlApplicationContext(XML) ---> context ---> getBean ---> RestaurantObj ---> call Restaurant method.
+   #+END_EXAMPLE

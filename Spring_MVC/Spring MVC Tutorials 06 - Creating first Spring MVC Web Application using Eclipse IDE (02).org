@@ -1,0 +1,227 @@
+#+TITLE: Spring MVC Tutorials 06 - Creating first Spring MVC Web Application using Eclipse IDE (02)
+
+The 1st project URL is: http://localhost:8080/FirstSpringMVCProject/welcome.html
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-26 21:10:49
+[[file:screenshot_2018-11-26_21-10-49.png]]
+
+In simple words, when controller reaches the ~spring-dispatcher-servlet.xml~,
+the FrontController's job is prepare the response to client's browser.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-26 21:12:12
+[[file:screenshot_2018-11-26_21-12-12.png]]
+
+Each *HandlerMapping* class analyse and match the coming request URL pattern
+using *different approaches*. This will introduce more consice in following lecture.
+
+
+*FrontController*, first should *find* which *Controller* should be called, with
+ the help of *HandlerMapping* class, HandlerMapping class would match the coming
+ request URL pattern with the bean's name (~<bean name="/welcom.html">~) of the
+ Controller class which is provided in the ~spring-dispatcher-servlet.xml~, if
+ match success, HandlerMapping wil suggest FrontController calling the
+ Controller class given in the same bean node(~<bean id="HanlderMapping"
+ class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>~)
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_EXAMPLE
+  <bean id="HanlderMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+
+  <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+
+  <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+    <property name="prefix">
+       <!-- 这里特别注意 '/WEB-INOF/' 不是 '/WEB-INFO' -->
+      <value>/WEB-INF</value>
+    </property>
+    <property name="suffix">
+      <value>.jsp</value>
+    </property>
+  </bean>
+#+END_EXAMPLE
+
+
+#+BEGIN_EXAMPLE
+
+                                                 HelloController.java
+                                    -----------------------------------------------
+  <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+              -------------         -----------------------------------------------
+              the request URL       Here is when input that name(='/welcome.html') in client's browser
+              input by client's     which class should take charge of this request.
+              browser
+              eg. http://localhost:8080/FirstSpringMVCProject/welcome.html
+#+END_EXAMPLE
+
+Here is the controller(specified by ~<bean class=>~) who should take charge of
+the related request with specific URL(specified by ~<bean name=>~).
+
+
+#+NAME: HelloController.java
+#+BEGIN_SRC java
+package com.gontuseries.hellocontroller;
+
+public class HelloController extends AbstractController{
+
+    @Override
+    protected ModelAndView handleRequestInternal(
+        HttpServletRequest request,
+        HttpServletResponse response
+        ) throws Exception {
+        ModelAndView modelandview = new ModelAndView("HelloPage");
+        modelandview.addObject("welcomeMessage", "Hi User, welcome to the first Spring MVC Application");
+        return modelandview;
+    }
+}
+#+END_SRC
+
+Each controller *must* extends some *basic controller*, here we use
+~AbstractController~, there are different *basic controller* provided by
+SpringFramework. Each *basic class* has different requirement and abstract
+methods that our own controller should override(~@Override~). This will
+introduce more consice in following lecture.
+
+Here the ~handleRequestInternal()~ method will return the ~modelandview~ object
+to *FrontController*.
+
+Now, our *FrontController* receive the ~modelandview~ object return by
+controller, it'll need to find out _exact location_ of the *view* present in the
+system using the *ViewResolver* class
+
+This is happenning here:
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_EXAMPLE
+  <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+    <property name="prefix"> <value>/WEB-INF/</value> </property>
+    <property name="suffix"> <value>.jsp</value> </property>
+  </bean>
+#+END_EXAMPLE
+
+~org.springframework.web.servlet.view.InternalResourceViewResolver~, this class
+will prepare the exact location of view which is present in the project, using
+the suffix and prefix values mention above. The same like what we said below,
+there many predefined ViewResolver in spring MVC, we use a basic viewResolver
+here ~InternalResourceViewResolver~, different viewResolver serve different
+purpose and has differernt using requirement.
+
+#+BEGIN_EXAMPLE
+
+        ModelAndView modelandview = neww ModelAndView("HelloPage");
+        <property name="prefix"> <value>/WEB-INF</value> </property>
+        <property name="suffix"> <value>.jsp</value> </property>
+
+prefix value       view name(provided by HelloController)    suffix value
+------------       ---------                                 ------------
+/WEB-INFO          /HelloPage                                .jsp
+#+END_EXAMPLE
+
+by this exact location, FrontController makes call to the ~/WEB-INFO/HelloPage.jsp~
+
+#+NAME HelloPage.jsp
+#+BEGIN_SRC jsp
+<html>
+  <body>
+    <h1>First Spring MVC Application Demo</h1>
+    <h2>${welcomeMessage}</h2>
+  </body>
+</html>
+#+END_SRC
+
+Here ~${welcomeMessage}~ in the ~HelloPage.jsp~ (a view) is the name of *model*
+(a java object) defined in the ~HelloController.java~ (controller or data
+generator), by ~modelandview.addObject("nameHere", "valueHere")~
+
+#+BEGIN_EXAMPLE
+HelloPage.jsp:                                <h2>${welcomeMessage}</h2>
+                                                    --------------
+                                                          ^
+                                                          |
+                                                          |
+HelloController.java:       modelandview.addObject("welcomeMessage", "Hi User, welcome to the first Spring MVC Application");
+                                                    --------------
+#+END_EXAMPLE
+
+So, once the jsp file prepare the response, it'll send it back to the
+*FrontController*, and the *FrontController* simply sends it to the client's
+browser as a response.
+
+* 源码
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-26 21:10:49
+[[file:screenshot_2018-11-26_21-10-49.png]]
+
+#+NAME: HelloController.java
+#+BEGIN_SRC java
+package com.gontuseries.hellocontroller;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.AbstractController;
+
+public class HelloController extends AbstractController{
+
+    @Override
+    protected ModelAndView handleRequestInternal(
+        HttpServletRequest request,
+        HttpServletResponse response
+        ) throws Exception {
+        ModelAndView modelandview = new ModelAndView("HelloPage");
+        modelandview.addObject("welcomeMessage", "Hi User, welcome to the first Spring MVC Application");
+
+        return modelandview;
+    }
+}
+#+END_SRC
+
+
+#+NAME: HelloPage.jsp
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1>First Spring MVC Application Demo</h1>
+    <h2>${welcomeMessage}</h2>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="HanlderMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+
+    <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+
+    <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+      <property name="prefix">
+        <!-- 这里特别注意 '/WEB-INOF/' 不是 '/WEB-INFO' -->
+        <value>/WEB-INF/</value>
+      </property>
+
+      <property name="suffix">
+        <value>.jsp</value>
+      </property>
+    </bean>
+  </beans>
+#+END_SRC
+
+#+NAME: web.xml
+#+BEGIN_SRC xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>FirstSpringMVCProject</display-name>
+  <servlet>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+</web-app>
+#+END_SRC

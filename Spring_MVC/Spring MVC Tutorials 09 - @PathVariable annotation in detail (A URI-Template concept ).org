@@ -1,0 +1,201 @@
+#+TITLE: Spring MVC Tutorials 09 - @PathVariable annotation in detail (A URI-Template concept )
+
+* PathVariable: One variable in RequestMapping
+#+NAME: HelloController.java
+#+BEGIN_SRC java
+  package com.gontuseries.hellocontroller;
+
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.servlet.ModelAndView;
+  import org.springframework.web.servlet.mvc.AbstractController;
+
+  @Controller
+  public class HelloController {
+
+      // @RequestMapping("/welcome/countryName/userName")
+      @RequestMapping("/welcome/countryName/{userName}")
+      protected ModelAndView handleRequestInternal(
+          @PathVariable("userName") String name
+          ) throws Exception {
+          ModelAndView modelandview = new ModelAndView("HelloPage");
+          modelandview.addObject("welcomeMessage", "Hi " + name + ", welcome to the first Spring MVC Application");
+          return modelandview;
+      }
+  }
+#+END_SRC
+
+Using *curly brace'{}'* to make part of URL a variable. This means that the
+frontcontroller can dispach all the following URL
+
+- ~loaclhost:8080/proj/welcome/countryName/yuanlong~,
+- ~loaclhost:8080/proj/welcome/countryName/yuanxin~,
+- ~loaclhost:8080/proj/welcome/countryName/chenhongqi~
+
+to this handler method.
+
+And for further speaking, if I want to use the variable of RequestMapping URL, I
+must declare another annotation ---
+~@PathVariable("variableOfRequestMappingURL")~ like ~@PathVariable("userName")~
+
+
+Here you must note that the ~@PathVariable~ annotation can not replace the
+parameter declaration. In other world, this annotation is just telling that this
+parameter is *coming from part of the request URL*, you should declare the
+parameter normally.
+
+#+BEGIN_EXAMPLE
+      @RequestMapping("/welcome/countryName/{userName}")
+                            +------------------^
+                            |
+          @PathVariable("userName") String name
+          ) throws Exception {              |
+                                            +---------------v
+          modelandview.addObject("welcomeMessage", "Hi " + name + ", welcome to the first Spring MVC Application");
+          return modelandview;
+      }
+#+END_EXAMPLE
+
+* PathVariable: two variable in RequestMapping
+It's the same for two variable:
+
+#+NAME: HelloController.java
+#+BEGIN_SRC java
+  package com.gontuseries.hellocontroller;
+
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.servlet.ModelAndView;
+  import org.springframework.web.servlet.mvc.AbstractController;
+
+  @Controller
+  public class HelloController {
+
+      // @RequestMapping("/welcome/countryName/userName")
+      @RequestMapping("/welcome/{countryName}/{userName}")
+      protected ModelAndView handleRequestInternal(
+          @PathVariable("userName") String name,
+          @PathVariable("countryName") String country
+          ) throws Exception {
+          ModelAndView modelandview = new ModelAndView("HelloPage");
+          modelandview.addObject("welcomeMessage", "Hi " + name + ", you coming from" + country);
+          return modelandview;
+      }
+  }
+#+END_SRC
+
+* PathVariable: Many variable in RequestMapping
+
+Spring says, if you put ~@PathVariable~ on a ~Map~ type parameter declaration,
+then it will put *all* the URL variable occur in ~@RequestMapping~ in this
+~Map<String, String>~ variable in form of ~name-value~ *pairs*.
+
+同时必须在 ~spring-dispatcher-servlet.xml~ 中给予声明: ~<mvc:annotation-driven/>~.
+
+也就是说,如果想使用 ~@PathVariable Map<String,String> pathVars~ 必须满足两个条件:
+1. 在 Handler 中声明之;
+2. 在 ~spring-dispatcher-servlet.xml~ 中声明 ~<mvc:annotation-driven/>~
+
+
+在 xml 中除了添加这个声明之外,还要添加上 mvc 的 xml namespace 和 schemaLocation.
+
+#+BEGIN_EXAMPLE
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:context="http://www.springframework.org/schema/context"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:mvc="http://www.springframework.org/schema/mvc"                // <- 1
+         xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/mvc                            // <- 2
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd">           // <- 3
+  ....
+    <mvc:annotation-driven />                                                 // <- 4
+  ....
+  </beans>
+#+END_EXAMPLE
+
+
+#+BEGIN_EXAMPLE
+          @PathVariable Map<String,String> pathVars
+          // no brace here after @PathVariable
+
+
+          @RequestMapping("/welcome/{countryName}/{userName}")
+                                     -----------   --------
+                                          |            |
+                            +-------------+            |
+                            |                     +----+
+                            v                     v
+          pathVars = {"countryName": "china"; "userName": "yuanlong"}
+
+          String name = pathVars.get("userName");
+
+          String country = pathVars.get("countryName");
+#+END_EXAMPLE
+
+#+NAME: HelloController.java
+#+BEGIN_SRC java
+  package com.gontuseries.hellocontroller;
+
+  import java.util.Map;
+
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.servlet.ModelAndView;
+  import org.springframework.web.servlet.mvc.AbstractController;
+
+  @Controller
+  public class HelloController {
+      // @RequestMapping("/welcome/countryName/userName")
+      @RequestMapping("/welcome/{countryName}/{userName}")
+      protected ModelAndView handleRequestInternal(
+          @PathVariable Map<String,String> pathVars        // <-
+          ) throws Exception {
+          String name = pathVars.get("userName");          // <-
+          String country = pathVars.get("countryName");    // <-
+          ModelAndView modelandview = new ModelAndView("HelloPage");
+          modelandview.addObject("welcomeMessage", "Hi " + name + ", you coming from" + country);
+          return modelandview;
+      }
+  }
+#+END_SRC
+
+
+#+NAME: print in console
+#+BEGIN_EXAMPLE
+First Spring MVC Application Demo
+Hi chenhongqi, you coming from countryName
+#+END_EXAMPLE
+
+
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:context="http://www.springframework.org/schema/context"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:mvc="http://www.springframework.org/schema/mvc"
+         xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <context:component-scan base-package="com.gontuseries.hellocontroller" />
+
+    <mvc:annotation-driven />
+
+    <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+      <property name="prefix">
+        <!-- 这里特别注意 '/WEB-INOF/' 不是 '/WEB-INFO' -->
+        <value>/WEB-INF/</value>
+      </property>
+      <property name="suffix">
+        <value>.jsp</value>
+      </property>
+    </bean>
+  </beans>
+#+END_SRC

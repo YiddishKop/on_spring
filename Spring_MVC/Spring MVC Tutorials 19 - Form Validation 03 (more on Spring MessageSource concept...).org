@@ -1,0 +1,61 @@
+#+TITLE: Spring MVC Tutorials 19 - Form Validation 03 (more on Spring MessageSource concept...)
+
+接上节课, 让这个 message 的传递可以根据 *可维护性*.
+
+
+上节课我们的进度停在如下三个文件的改进上, 但是他仍旧是有问题的.
+#+NAME: Student.java
+#+BEGIN_SRC java
+    @Size(min=2, max=30) // 这里就不需要 message 了.
+	private String studentHobby;
+#+END_SRC
+
+#+NAME: /WEB-INF/spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+    <property name="basename" value="/WEB-INF/studentmessages" />
+  </bean>
+#+END_SRC
+
+[注意] *这里 properties 文件声明的时候不需要写文件扩展名, 也就是 +.properties+.*
+
+#+NAME: /WEB-INF/studentmessages.properties
+#+BEGIN_SRC txt
+Size.student1.studentHobby = please enter a value for studentHobby field between 2 and 30 characters
+#+END_SRC
+
+但是当我们想更改类的 ~属性名,最小值,最大值~ 这三者的时候,我们还是需要去 .properties
+文件中进行修改, 这还是很繁琐.
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+    @Size(min=2000, max=3000000)   // <-
+	private String studentActivity;// <-
+#+END_SRC
+
+我们可以在 .properties 文件中的 key-value 中的 value 部分进行变量引用.
+
+#+NAME: /WEB-INF/studentmessages.properties
+#+BEGIN_SRC txt
+Size.student1.studentHobby = please enter a value for {0} field between {2} and {1} characters
+#+END_SRC
+
+~@Size~ 标签 value 部分变量引用的规则是:
+
+| 标号 | 变量   |
+|------+--------|
+| {0}  | 属性名 |
+| {1}  | 最大值 |
+| {2}  | 最小值 |
+
+
+* The placeholders using guidlines
+
+In general while using such placeholders in any other custom error message in
+.properties file, you please follow these simple guidlines.
+
+ *The most common is SpringMVC conside the placeholders index follow the
+ alphabetic order of annotation's augments's name*
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-02 21:37:18
+[[file:The placeholders using guidlines/screenshot_2018-12-02_21-37-18.png]]

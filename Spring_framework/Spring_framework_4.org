@@ -1,0 +1,25 @@
+#+TITLE: lec-04: Installation and setup(Hands on using Eclipse IDE)
+
+
+download the Spring Framwork jars in the following URL:
+
+https://repo.spring.io/release/org/springframework/spring/
+
+
+Spring Framwork need one more jars, you can download from URL below:
+
+https://commons.apache.org/proper/commons-logging/download_logging.cgi
+
+
+The following Eclipse operation:
+1. build a *Java project*;
+2. right click the project, and choose *properties*;
+3. choose *Java Build path*
+4. Build a customer Library:
+   1. choose *Add Library*;
+   2. choose *User Library*;
+   3. Give it a name;
+   4. select the named Empty Library;
+   5. choose *Add External Jars*
+   6. find the Jars downloaded from the 2 URLs;
+   7. apply and close;

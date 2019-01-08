@@ -1,0 +1,64 @@
+#+TITLE: Spring MVC Tutorials 13 - Data Binding with Date, Collection (Arraylist), Long etc.
+
+Talking about some advanced level *data binding features*, which you may make use
+of using @ModelAttribute annotation on a method argument.
+
+
+传入的数据可以自动绑定到已经定义的类型的相关属性, 这个 SpringMVC 提供的功能是相
+当相当强大的, 不但可以自动绑定 String/Double/Int/Collection 类型属性. 还可以自动
+绑定用户自定义类型的属性. 本节介绍他自动绑定 String/Date/Double/Collection 类型
+的属性.
+
+
+当数据传进来的时候可以自动绑定对应类的属性, 这件事情背后的原理是什么.
+
+Spring 会首先自动进行类型匹配, 比如表单信息应该是 String 类型, Spring 就去寻找
+Student的String属性. 而且 Spring 不仅仅支持 String 类型, 还支持数值类型以及
+Collection 类型, 甚至是用户自定义类型的自动匹配.
+
+
+ *重要结论*
+
++这里必须要说清楚一件事情, 就是即便我们没有显式的把 request parameter 通过+
++~model.addObject("xxx", "xxx" + name + "xxx");~ 把信息保存下来, model 中也已经存+
++储了传进来的参数. 也就是如下代码会正确显式出 request parameter 的信息.+
+
+使用 @ModelAttribute 作为 Request handler 函数参数时的注意事项:
+
+1. 使用了 ~@ModelAttribute~ 声明, 所以他自动绑定所有的请求参数到 student 对象所
+   有的属性中. 这要求, *每一个请求参数都必须被绑定, 但不是所有的对象属性都需要被
+   绑定*. 否则就会报错.
+
+
+2. 而且, 虽然你在 form 表单中提交的请求参数都是 ~type=text~ 但是 SpringMVC 可以
+   通过 你书写这些表单信息的格式来 *类型根据格式自动的匹配* 到 student 中的相应
+   类型.
+
+- 比如: input student DOB: 2018/12/01 ====> 会被自动匹配为 student 的 Date 类型
+  属性.
+- 比如: multiple selecting student SKills: Java Core, Spring MVC ====> 会被自动
+  匹配为 student 的 Arraylist 类型属性.
+
+
+3. 最后, 使用了这个 annotation 之后, 所有传入的请求参数都会封装成对应的对象(对象
+   名为 ~"student1"~ ), 被 request handler 作为 model 返回给 FrontController *不
+   需要显式写入model* 的使用 ~model.addObject~
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+@Controller
+public class StudentAdmissionController {
+    @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+    public ModelAndView getAdmissionForm(){
+        ModelAndView model1 = new ModelAndView("AdmissionForm");
+        return model1;
+    }
+    @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+    public ModelAndView submitAdmissionForm(
+        @ModelAttribute("student1") Student student1
+        ){
+        ModelAndView model1 = new ModelAndView("AdmissionSuccess");
+        return model1;
+    }
+}
+#+END_SRC

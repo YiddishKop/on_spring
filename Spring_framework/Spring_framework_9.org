@@ -1,0 +1,142 @@
+#+TITLE: lec-09: Dependency Injection with a Collection propery
+
+- Spring lec-07: DI using Ctor way
+- Spring lec-08: DI using setter way
+
+Content of this lecture:
+
+How to provide value of a Java collection used in a java class from the spring
+configuration file or in other words, how Spring Framework initialize a Java
+collection used in a java class with the values you provide in the spring's
+configuration file.
+
+#+BEGIN_EXAMPLE
+           give value
+XML -----------------------> Java collection
+#+END_EXAMPLE
+
+
+#+BEGIN_EXAMPLE
+XML ---> ClassPathXmlApplicationContext ---> context ---> getBean ---> RestaurantObj ---> Call method.
+
+本质上是:
+
+           give value
+XML -----------------------> Java object
+
+#+END_EXAMPLE
+
+我们之前分析过: Spring Framework 通过 DI 和 XML 在做的事情就是 *剥离类的定义和使用*:
+1. 剥离对象的创建
+2. 剥离属性的赋值
+3. 剥离方法的调用
+
+
+Java provide three core collection interfaces: Set, List, Map
+
+#+BEGIN_SRC java
+  public class MyListClass {
+      public static void main(){
+          List listOfStudents;
+          listOfStudents = neww ArrayList();
+
+          listOfStudents.add("The Rock");
+          listOfStudents.add("The Undertaker");
+          listOfStudents.add("The Great Khali");
+          listOfStudents.add("John Cena");
+
+          System.out.println(listOfStudents);
+      }
+  }
+#+END_SRC
+
+我们要做的也是和普通类的剥离是类似的, 回忆我们如何对普通类的属性的赋值进行剥离
+的:
+1. 我们首先 *声明* 类的一个 *属性* 且不做初始化,
+2. 然后提供一个该属性的公共 *setter*,
+3. 最后我们把该属性的值连同该类以 <Bean> 和 <property> or <constructor-arg ref=> 的形式写入 *XML*
+
+
+*类的集合属性在XML中的书写方式*
+
+
+我们对 collection 类也做类似的操作. 只不过 ~XML file~ 中对于 collection 类型的
+property 需要 *特殊的语法格式*:
+
+
+#+NAME: 普通类属性
+#+BEGIN_EXAMPLE
+    <property name="welcomeNote" value="welcome to our Restaurant">
+    </property>
+#+END_EXAMPLE
+
+*普通类属性, value 直接写在 node 的属性中,因为他只有一个值.*
+
+#+NAME: 集合类属性
+#+BEGIN_EXAMPLE
+    <property name="restaurantWaitersList">
+      <value>Mr.yuan</value>
+      <value>Mr.li</value>
+      <value>Mr.wu</value>
+      <value>Mr.huang</value>
+    </property>
+#+END_EXAMPLE
+
+*集合类属性, value 值有很多个, 所以每个 value 要单独写成 node.*
+
+
+* 源码示例
+#+NAME: version4: Restaurant.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import java.util.List;
+
+public class Restaurant {
+    private List restaurantWaitersList;
+
+    public void setRestaurantWaitersList(List restaurantWaitersList){
+        this.restaurantWaitersList = restaurantWaitersList;
+    }
+
+    public void displayWaitersNames(){
+        System.out.println("All waiters working in Restaurant : " + restaurantWaitersList);
+    }
+}
+#+END_SRC
+
+
+
+#+NAME: TestSpringProjectCollection.java
+#+BEGIN_SRC java
+  package org.gontuseries.springcore;
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+  public class TestSpringProjectCollection {
+      public static void main(String[] args){
+          ApplicationContext context =
+              new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+          Restaurant restaurantObj = (Restaurant)context.getBean("restaurantBean");
+
+          restaurantObj.displayWaitersNames();
+      }
+  }
+#+END_SRC
+
+
+
+唯一需要改变的是 XML 中 bean 属性的书写方式:
+
+#+NAME: SpringConfig.xml
+#+BEGIN_SRC xml
+  <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+    <property name="restaurantWaitersList">
+      <value>Mr.yuan</value>
+      <value>Mr.li</value>
+      <value>Mr.wu</value>
+      <value>Mr.huang</value>
+    </property>
+  </bean>
+#+END_SRC

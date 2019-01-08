@@ -1,0 +1,236 @@
+#+TITLE: Spring MVC Tutorials 07 - writing an annotation based controller class -@Controller, @RequestMapping.en.transcribed
+
+* 使用 Annotation 带来的格式变化及其意义
+2 ways to write a controller class in your project:
+1. using annotations;
+2. not using annotations;
+
+
+When you mention controller annotation(~@Controller~) on top of a java class,
+then I will consider it as a Spring Controller. There are *2* basic benefit:
+1. you do not need to extend the ~hellocontroller~ class from any specific basic
+   controller or implement any specific basic interfaces.
+2. you do not need specify ~<bean name="/welcome.html" name="xxxcontroller">~ in
+   ~spring-dispatcher-servlet.xml~
+3. you do not need specify ~<bean id="HanlderMapping"
+   class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>~
+
+
+#+BEGIN_EXAMPLE
+    <!-- delete:
+    <bean id="HanlderMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+    -->
+
+    <!-- delete:
+    <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+    -->
+
+    <!-- add:-->
+    <context:component-scan base-package="com.gontuseries.hellocontroller" />
+#+END_EXAMPLE
+
+What we "add" in the "spring-dispatcher-servlet.xml" is to tell springframework
+*please automatically detect all java classes having '@controller' annotation
+within the package declared by "~base-package="xxx"~"*, and also please do
+consider all of them as if I have put their entries(eg, ~<bean
+name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController"/>~
+) in this XML file.
+
+也就是说使用 annotation 的两个必要条件:
+1. 创建带有 @Controller annotation 标记的类;
+2. 在 spring-dispatcher-serlvet 中声明 context:component-scan 节点
+
+
+* 整个流程的意义
+
+  #+BEGIN_EXAMPLE
+Request URL from client's browser
+|
+|
+|
+v
+web.xml (FrontController)
+|
+| FrontController reaches this file for further processing
+|
+v
+spring-dispatcher-servlet.xml (3 informations: HandlerMapping, ViewResolver, DataGenerator)
+(with <context:component-scan base-package='xxx'> inside)
+|
+| the FrontController understand you use annotation basic controllers
+| in the specified package "base-package='xxx'"
+v
+FrontController loads all classes in "base-package" into memory
+|
+|
+| now FrontController need to decide which controller method should be invoked for
+| further processing the request.
+|
+| it looks at the RequestMapping annotaion value of each method present in each
+| controller class in the application
+|
+| compare their value with the incoming request URL pattern. If matched, the method
+| will be called.
+|
+|
+v
+Once the controller is called by FrontController, it prepare the name and content of jsp(view).
+This method will return view name and view content in form of an ModelAndView object to FrontController:
+1. the view name : with 'view name' as the paramter of Ctor of ModelAndView class
+2. the view content: a name-value pair, add to ModelAndView obj by addObject method.
+|
+|
+v
+The FrontController receive the ModelAndView obj and extract view name and view content from it.
+|
+|
+v
+According to the exact location path rule given by ViewResolver:
+prefix +'ViewName.jsp' + sufix;
+we locate the .jsp file, replace the
+1. by the 'view name' ===locate===> [view name].jsp
+2. by the 'view content: name-value' ===locate===> replace ${content-name} in .jsp file with
+content-value. Attention: view name, content-name are all of String type.
+
+  #+END_EXAMPLE
+
+
+
+
+
+
+* 源码
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-26 21:10:49
+[[file:screenshot_2018-11-26_21-10-49.png]]
+
+#+NAME: HelloController.java
+#+BEGIN_SRC java
+package com.gontuseries.hellocontroller;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.AbstractController;
+
+public class HelloController extends AbstractController{
+
+    @Override
+    protected ModelAndView handleRequestInternal(
+        HttpServletRequest request,
+        HttpServletResponse response
+        ) throws Exception {
+        ModelAndView modelandview = new ModelAndView("HelloPage");
+        modelandview.addObject("welcomeMessage", "Hi User, welcome to the first Spring MVC Application");
+
+        return modelandview;
+    }
+}
+#+END_SRC
+
+#+NAME: annotation version: HelloController.java
+#+BEGIN_SRC java
+  package com.gontuseries.hellocontroller;
+
+  import org.springframework.web.servlet.ModelAndView;
+  import org.springframework.web.servlet.mvc.AbstractController;
+
+  @Controller
+  public class HelloController {
+
+      @RequestMapping("/welcome")
+      protected ModelAndView handleRequestInternal() throws Exception {
+          ModelAndView modelandview = new ModelAndView("HelloPage");
+          modelandview.addObject("welcomeMessage", "Hi User, welcome to the first Spring MVC Application");
+          return modelandview;
+      }
+  }
+#+END_SRC
+
+#+NAME: HelloPage.jsp
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1>First Spring MVC Application Demo</h1>
+    <h2>${welcomeMessage}</h2>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="HanlderMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+
+    <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+
+    <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+      <property name="prefix">
+        <!-- 这里特别注意 '/WEB-INOF/' 不是 '/WEB-INFO' -->
+        <value>/WEB-INF/</value>
+      </property>
+
+      <property name="suffix">
+        <value>.jsp</value>
+      </property>
+    </bean>
+  </beans>
+#+END_SRC
+
+#+NAME: Annotation version: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+    <!-- 添加关于 context 的 xml 信息, 对比下面的理解 -->
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:context="http://www.springframework.org/schema/context"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="
+                               http://www.springframework.org/schema/beans
+                               http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                               http://www.springframework.org/schema/context
+                               http://www.springframework.org/schema/context/spring-context.xsd">
+  <!--
+      <beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+      http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+  -->
+
+       <!-- delete:
+       <bean id="HanlderMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+       <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+       -->
+
+       <!-- add:-->
+       <context:component-scan base-package="com.gontuseries.hellocontroller" />
+
+       <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+         <property name="prefix">
+           <!-- 这里特别注意 '/WEB-INOF/' 不是 '/WEB-INFO' -->
+           <value>/WEB-INF/</value>
+         </property>
+
+         <property name="suffix">
+           <value>.jsp</value>
+         </property>
+       </bean>
+
+    </beans>
+#+END_SRC
+#+NAME: web.xml
+#+BEGIN_SRC xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>FirstSpringMVCProject</display-name>
+  <servlet>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+</web-app>
+#+END_SRC

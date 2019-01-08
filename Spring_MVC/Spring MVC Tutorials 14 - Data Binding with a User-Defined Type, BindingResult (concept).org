@@ -1,0 +1,568 @@
+#+TITLE: Spring MVC Tutorials 14 - Data Binding with a User-Defined Type, BindingResult (concept)
+
+How SpringMVC automatically binds HTML form data which is submitted by the user
+on the browser with the corresponding properties of the 'student' object.
+
+"automatically bind" suit for all buit-in data types.
+
+* input name
+
+#+BEGIN_SRC java
+public ModelAndView submitAdmissionForm(@ModelAttribute('student1') Student student){...}
+#+END_SRC
+这个 ~@ModelAttribute()~ 默认的把网页的请求参数(表单填写的内容)全部(包括各种类型
+的信息)与 student 的属性进行一一对应, 不要求 student 的属性被全部映射到, 但请求
+参数必须全被映射.
+
+但是当我们定义的 student 类包含其他类属性的时候, 发起 request 的 JSP 页面, 那些
+要输入信息的地方的html标签的名字就需要略作改变:
+
+
+#+BEGIN_EXAMPLE
+表单 JSP                                                                    Student 类
+------------------------------------------------                            -------------------------------------
+<td><input name="studentName" type="text"/></td>                        	private String studentName;
+<td><input name="studentHobby" type="text"/></td>                           private String studentHobby;
+<td><input name="studentMobile" type="text"/></td>                          private Long studentMobile;
+<td><input name="studentDOB" type="text"/></td>                             private Date StudentDOB;
+<td>                                                                        private ArrayList<String> studentSkills;
+  <select name="studentSkills" multiple>
+	<option value="Java Core"> Java Core</option>
+	<option value="Spring Core"> Spring Core</option>
+	<option value="Spring MVC"> Spring MVC</option>
+  </select>
+</td>
+
+重点来了
+                                                                            private Address studentAddress;
+<td>country: <input name="studentAddress.country" type="text"/></td>           |private String country;
+<td>city: <input name="studentAddress.city" type="text"/></td>                 |private String city;
+<td>street: <input name="studentAddress.street" type="text"/></td>             |private String street;
+<td>pincode: <input name="studentAddress.pincode" type="text"/></td>           |private int pincode;
+#+END_EXAMPLE
+
+可以看到, 当 student 有用户自定义的类型属性的时候, JSP 的 ~<input name="___">~
+部分写成 *类的调用形式*, 这种嵌套结构一直如此进行下去,直到属性为 built-in type.
+
+
+* The concept of finding erros when using data binding
+
+
+what programmer should do when any data binding related error occur in server.
+The most common pattern which developers follow to deal with such a situation as
+they return back the same HTML form to the client along with the complete
+description of data binding errors. So that users would refill the HMTL form
+with correct value and resubmit that table form back to the SpringMVC
+application.
+
+
+SpringMVC provide somthing called ~BindingResult~, and if you place the
+~BindingResult~ on the method argument for this request handler method like:
+
+#+BEGIN_SRC java
+  public ModelAndView submitAdmissionForm(@ModelAttribute('student1') Student student){...}
+  /*    |
+        |
+        |
+        v   */
+  public ModelAndView submitAdmissionForm(@ModelAttribute('student1') Student student,
+                                          BindingResult result){...}
+#+END_SRC
+
+Then, I will catch all binding errors appropriately for you, and put all them
+into the ~result~ reference. And the most common way to use ~BindingResult~ is
+to add the following code in body of request handler method:
+
+#+BEGIN_SRC java
+  public ModelAndView submitAdmissionForm(
+      @ModelAttribute('student1') Student student,
+      BindingResult result){
+      // 注意 (1)(2) 的 view 是不同的, 一个在原来的页面直接展示,一个跳到新页面展示
+      if (result.hasError()) {
+          ModelAndView model1 = new ModelAndView("AdmissionForm"); // <- (1)
+          return model1;
+      }
+
+      ModelAndView model1 = new ModelAndView("AdmissionSuccess");  // <- (2)
+      return model1;
+      }
+#+END_SRC
+
+And also, we should make some changes in the ~AdmissionForm.JSP~, add two line
+code:
+
+#+BEGIN_SRC html
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+....
+<form:errors path="student1.*"
+#+END_SRC
+
+Two Points to note here:
+1. SpringMVC removed all user entered values while resending the html form with
+   an error message
+
+2. The error message is not so readable
+
+in the subsequent tutorials, I would show you a way to overcome both these
+issues.
+
+* 原来的代码
+
+  #+NAME: Student.java
+  #+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+
+import java.util.ArrayList;
+import java.util.Date;
+
+public class Student {
+	private String studentName;
+	private String studentHobby;
+	private Long studentMobile;
+    private Date StudentDOB;
+    private ArrayList<String> studentSkills;
+
+    public Long getStudentMobile() {
+		return studentMobile;
+	}
+	public void setStudentMobile(Long studentMobile) {
+		this.studentMobile = studentMobile;
+	}
+	public Date getStudentDOB() {
+		return StudentDOB;
+	}
+	public void setStudentDOB(Date studentDOB) {
+		StudentDOB = studentDOB;
+	}
+	public ArrayList<String> getStudentSkills() {
+		return studentSkills;
+	}
+	public void setStudentSkills(ArrayList<String> studentSkills) {
+		this.studentSkills = studentSkills;
+	}
+    public String getStudentName(){
+        return studentName;
+    }
+    public void setStudentName(String studentName){
+        this.studentName = studentName;
+    }
+    public String getStudentHobby(){
+        return studentHobby;
+    }
+    public void setStudentHobby(String studentHobby){
+        this.studentHobby = studentHobby;
+    }
+}
+
+  #+END_SRC
+
+
+  #+NAME: StudentAddmissionController.java
+  #+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+import java.util.Map;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class StudentAdmissionController {
+
+    @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+    public ModelAndView getAdmissionForm(){
+        ModelAndView model1 = new ModelAndView("AdmissionForm");
+        return model1;
+    }
+
+    @ModelAttribute
+    public void addingCommonObjects(Model model1) {
+        // 有了下面这条语句,就可以把其他所有 request handler 的相同语句删掉了
+        // 在 @ModelAttribute 的加持下,这个函数能阳光普照般的给其他 model
+        // 添加对象.
+        model1.addAttribute("headerMessage", "Gontu College of Engineer, India");
+    }
+
+    @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+    public ModelAndView submitAdmissionForm(
+        @ModelAttribute("student1") Student student1
+        ){
+        ModelAndView model1 = new ModelAndView("AdmissionSuccess");
+        return model1;
+    }
+}
+  #+END_SRC
+
+#+NAME: AdmissionForm.jsp
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1>${headerMessage}</h1>
+    <h3> STUDENT ADMISSION FORM FOR ENGINEERING COURSES </h3>
+    <form method="post" action="/FirstSpringMVCProject/submitAdmissionForm.html">
+      <table>
+        <tr>
+          <td>Student's Name: </td>
+          <td><input name="studentName" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's Hobby: </td>
+          <td><input name="studentHobby" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's Mobile: </td>
+          <td><input name="studentMobile" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's DOB: </td>
+          <td><input name="studentDOB" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's Skills set: </td>
+          <td>
+            <select name="studentSkills" multiple>
+              <option value="Java Core"> Java Core</option>
+              <option value="Spring Core"> Spring Core</option>
+              <option value="Spring MVC"> Spring MVC</option>
+            </select>
+          </td>
+        </tr>
+      </table>
+      <input type="submit" name="Submit this form, by clicking here"/>
+    </form>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: AdmissionSuccess.jsp
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1>${headerMessage} </h1>
+    <h3>Congratulations!! process you form successfully!</h3>
+    <h2>Details submitted by you: </h2>
+    <table>
+      <tr>
+        <td>Student Name: </td>
+        <td>${student1.studentName}</td>
+      </tr>
+      <tr>
+        <td>Student Hobby: </td>
+        <td>${student1.studentHobby}</td>
+      </tr>
+      <tr>
+        <td>Student Mobile: </td>
+        <td>${student1.studentMobile}</td>
+      </tr>
+      <tr>
+        <td>Student DOB: </td>
+        <td>${student1.studentDOB}</td>
+      </tr>
+      <tr>
+        <td>Student Skills: </td>
+        <td>${student1.studentSkills}</td>
+      </tr>
+    </table>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:context="http://www.springframework.org/schema/context"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:mvc="http://www.springframework.org/schema/mvc"
+         xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <context:component-scan base-package="com.gontuseries.hellocontroller" />
+    <context:component-scan base-package="com.gontuseries.studentadmissioncontroller" />
+
+    <mvc:annotation-driven />
+
+    <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+      <property name="prefix">
+        <!-- 这里特别注意 '/WEB-INOF/' 不是 '/WEB-INFO' -->
+        <value>/WEB-INF/</value>
+      </property>
+
+      <property name="suffix">
+        <value>.jsp</value>
+      </property>
+    </bean>
+  </beans>
+#+END_SRC
+
+#+NAME: web.xml
+#+BEGIN_SRC xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns="http://java.sun.com/xml/ns/javaee"
+xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+id="WebApp_ID"
+version="3.0">
+  <display-name>FirstSpringMVCProject</display-name>
+  <servlet>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+</web-app>
+#+END_SRC
+
+* 现在的代码
+
+#+NAME: Address.java
+#+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+
+public class Address{
+    private String country;
+    private String city;
+    private String street;
+    private int pincode;
+
+    public String getCountry() {
+		return country;
+	}
+	public void setCountry(String country) {
+		this.country = country;
+	}
+	public String getCity() {
+		return city;
+	}
+	public void setCity(String city) {
+		this.city = city;
+	}
+	public String getStreet() {
+		return street;
+	}
+	public void setStreet(String street) {
+		this.street = street;
+	}
+	public int getPincode() {
+		return pincode;
+	}
+	public void setPincode(int pincode) {
+		this.pincode = pincode;
+	}
+}
+  #+END_SRC
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+
+import java.util.ArrayList;
+import java.util.Date;
+
+public class Student {
+	private String studentName;
+	private String studentHobby;
+	private Long studentMobile;
+    private Date StudentDOB;
+    private ArrayList<String> studentSkills;
+
+    private Address studentAddress;
+
+    public Address getStudentAddress() {
+		return studentAddress;
+	}
+	public void setStudentAddress(Address studentAddress) {
+		this.studentAddress = studentAddress;
+	}
+    public Long getStudentMobile() {
+		return studentMobile;
+	}
+	public void setStudentMobile(Long studentMobile) {
+		this.studentMobile = studentMobile;
+	}
+	public Date getStudentDOB() {
+		return StudentDOB;
+	}
+	public void setStudentDOB(Date studentDOB) {
+		StudentDOB = studentDOB;
+	}
+	public ArrayList<String> getStudentSkills() {
+		return studentSkills;
+	}
+	public void setStudentSkills(ArrayList<String> studentSkills) {
+		this.studentSkills = studentSkills;
+	}
+
+    public String getStudentName(){
+        return studentName;
+    }
+    public void setStudentName(String studentName){
+        this.studentName = studentName;
+    }
+    public String getStudentHobby(){
+        return studentHobby;
+    }
+    public void setStudentHobby(String studentHobby){
+        this.studentHobby = studentHobby;
+    }
+}
+#+END_SRC
+
+#+NAME: AdmissionForm.jsp
+#+BEGIN_SRC html
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<html>
+  <body>
+    <h1>${headerMessage}</h1>
+    <h3> STUDENT ADMISSION FORM FOR ENGINEERING COURSES </h3>
+
+    <form:errors path="student1.*"/>
+
+    <form method="post" action="/FirstSpringMVCProject/submitAdmissionForm.html">
+      <table>
+        <tr>
+          <td>Student's Name: </td>
+          <td><input name="studentName" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's Hobby: </td>
+          <td><input name="studentHobby" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's Mobile: </td>
+          <td><input name="studentMobile" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's DOB: </td>
+          <td><input name="studentDOB" type="text"/></td>
+        </tr>
+        <tr>
+          <td>Student's Skills set: </td>
+          <td>
+            <select name="studentSkills" multiple>
+              <option value="Java Core"> Java Core</option>
+              <option value="Spring Core"> Spring Core</option>
+              <option value="Spring MVC"> Spring MVC</option>
+            </select>
+          </td>
+        </tr>
+      </table>
+      <table>
+        <tr>
+          <td>Student's Address</td>
+        </tr>
+        <tr>
+          <td>country: <input name="studentAddress.country" type="text"/> </td>
+          <td>city: <input name="studentAddress.city" type="text"/> </td>
+          <td>street: <input name="studentAddress.street" type="text"/> </td>
+          <td>pincode: <input name="studentAddress.pincode" type="text"/> </td>
+        </tr>
+      </table>
+      <input type="submit" name="Submit this form, by clicking here"/>
+    </form>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: AdmissionSuccess.jsp
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1>${headerMessage} </h1>
+    <h3>Congratulations!! process you form successfully!</h3>
+    <h2>Details submitted by you: </h2>
+    <table>
+      <tr>
+        <td>Student Name: </td>
+        <td>${student1.studentName}</td>
+      </tr>
+      <tr>
+        <td>Student Hobby: </td>
+        <td>${student1.studentHobby}</td>
+      </tr>
+      <tr>
+        <td>Student Mobile: </td>
+        <td>${student1.studentMobile}</td>
+      </tr>
+      <tr>
+        <td>Student DOB: </td>
+        <td>${student1.studentDOB}</td>
+      </tr>
+      <tr>
+        <td>Student Skills: </td>
+        <td>${student1.studentSkills}</td>
+      </tr>
+
+      <tr>
+        <td>Student Address: </td>
+        <td>
+          country: ${student1.studentAddress.country}
+          city:    ${student1.studentAddress.city}
+          street:  ${student1.studentAddress.street}
+          pincode: ${student1.studentAddress.pincode}
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+
+  import java.util.Map;
+
+  import org.springframework.stereotype.Controller;
+  import org.springframework.ui.Model;
+  import org.springframework.validation.BindingResult;
+  import org.springframework.web.bind.annotation.ModelAttribute;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.bind.annotation.RequestMethod;
+  import org.springframework.web.bind.annotation.RequestParam;
+  import org.springframework.web.servlet.ModelAndView;
+
+
+  @Controller
+  public class StudentAdmissionController {
+
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model1 = new ModelAndView("AdmissionForm");
+          return model1;
+      }
+
+      @ModelAttribute
+      public void addingCommonObjects(Model model1) {
+          // 有了下面这条语句,就可以把其他所有 request handler 的相同语句删掉了
+          // 在 @ModelAttribute 的加持下,这个函数能阳光普照般的给其他 model
+          // 添加对象.
+          model1.addAttribute("headerMessage", "Gontu College of Engineer, India");
+      }
+
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @ModelAttribute("student1") Student student1,
+          BindingResult result // for handling the error occur in data binding
+          ){
+          // using to add error message to model if occured
+          // Note that, the two view object where model pass to is different
+          if (result.hasErrors()) {
+              ModelAndView model1 = new ModelAndView("AdmissionForm"); // <- (1)
+              return model1;
+          }
+          ModelAndView model1 = new ModelAndView("AdmissionSuccess");  // <- (2)
+          return model1;
+      }
+  }
+#+END_SRC

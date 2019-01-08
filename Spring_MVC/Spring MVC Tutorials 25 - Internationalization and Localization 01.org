@@ -1,0 +1,57 @@
+#+TITLE: Spring MVC Tutorials 25 - Internationalization and Localization 01
+
+The process of creating or developing a web application in such a general manner
+that it can *handle or support more than one language* is known as
+*Internationalization* (国际化), then for that language what you do is
+*Localization* (本地化).
+
+
+某个网站有 50% 的客户来自美国, 有 50% 的客户来自法国, 我们该怎么办呢.
+
+让我们来分析下这个题目, 首先最先想到的肯定是 JSP 网页, 他是最直接的展示在用户面
+前的, 多语言肯定是最终要体现在 JSP 页面中. 所以我们先对 JSP 页面进行改进, 改进的
+方法也很简单就是用 placeholder 代替原来直接 hardwriting 的文本.
+
+#+NAME: studentmessage.properties
+#+BEGIN_SRC txt
+Size.student1.studentHobby = please enter a value for {0} field between {2} and {1} characters
+#+END_SRC
+
+#+NAME: admissionForm.jsp
+#+BEGIN_SRC html
+  <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+  <html>
+    <body>
+      <h1>${headerMessage}</h1>
+      <h3> STUDENT ADMISSION FORM FOR ENGINEERING COURSES </h3>
+      <form:errors path="student1.*"/>
+      <form method="post" action="/FirstSpringMVCProject/submitAdmissionForm.html">
+        <table>
+          <tr>
+            <td>Student's Name: </td>
+            <td><input name="studentName" type="text"/></td>
+          </tr>
+          <tr>
+            <td>Student's Hobby: </td>
+            <td><input name="studentHobby" type="text"/></td>
+          </tr>
+          <tr>
+            <td>Student's Mobile: </td>
+            <td><input name="studentMobile" type="text"/></td>
+          </tr>
+          <tr>
+            <td>Student's DOB: </td>
+            <td><input name="studentDOB" type="text"/></td>
+          </tr>
+          <tr>
+            <td>Student's Skills set: </td>
+            <td>
+              <select name="studentSkills" multiple>
+                <option value="Java Core"> Java Core</option>
+                <option value="Spring Core"> Spring Core</option>
+                <option value="Spring MVC"> Spring MVC</option>
+              </select>
+            </td>
+          </tr>
+        </table>
+#+END_SRC

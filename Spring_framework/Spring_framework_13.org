@@ -1,0 +1,262 @@
+#+TITLE: lec-13: Bean Life cycle using Annotations and InitializingBean, DisposableBean, interface
+
+Beside the ~init()~ and ~destroy~ method of Bean class, there're 3 way we can
+use to do the same task:
+
+1. Annotations;
+2. InitializingBean
+3. DisposableBean interface;
+
+
+For this, we should perform:
+1. Using Annotations(PostConstruct, PreDestroy);
+2. By implementing methods in InitializingBean and DisposableBean interfaces;
+
+
+* Annotations(PostConstruct, PreDestroy)
+
+1. no need of ~init-method=""~ and ~destroy-method=""~ in *SpringConfig.xml*
+2. add ~@PostConstruct~ and ~@PreDestroy~ annotations just above the proper
+   methods of *Bean class*
+3. add Bean post processor in *SpringConfig.xml*
+
+What we have done here is using *annotation*, do the same task as what we were
+doing in ~SpringConfig.xml~.
+
+If using these two annotations, you will need to decalre a Bean Post processor
+in Spring's Configuration file.
+
+#+NAME: enable the annotation
+#+BEGIN_EXAMPLE
+   coder                JavaX                   SpringFramework
+     |                    |                        |
+     | coding             | provide                | provide
+     v                    v                        v
+@annotation   <------- a 'slot' <-------- implementation of this annotation
+method code
+#+END_EXAMPLE
+
+#+NAME: act according to annotation
+#+BEGIN_EXAMPLE
+
+     perform on
++----------------------------- Bean post processor  ---+
+|                                                      | read
+|                                                      v
+|
+|       coder                JavaX                   SpringFramework
+|         |                    |                        |
+|         | coding             | provide                | provide
+|         v                    v                        v
+|    @annotation   <------- a 'slot' <-------- implementation of this annotation
++->  method code
+#+END_EXAMPLE
+
+Why we declare a bean with the name common annotation in post processor.
+
+
+It's actually *bean post processor* which *reads* these annoations from your
+*bean classes* and then *act accordingly*, and by default these annoations are
+not recognized by Spring Framework. In order to *enable* these annotations you
+explicitly need to *declare* this being in your *Spring Configuration file*. For
+different sett of annoations there're different beans you need to declare in
+Springs configuration file.
+
+
+#+NAME: Restaurant.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+public class Restaurant {
+	public void greetCustomer() {
+		System.out.println("welcome dear customer~~, this is the LifeCycle demo!");
+	}
+
+	@PostConstruct
+    public void init(){
+        System.out.println("Restaurant Bean is going through init.");
+    }
+
+	@PreDestroy
+    public void destroy(){
+        System.out.println("Bean will destroy now.");
+    }
+}
+#+END_SRC
+
+
+#+NAME: TestSpringProject.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestSpringProject {
+
+	public static void main(String[] args) {
+
+		ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+        ((AbstractApplicationContext)context).registerShutdownHook();
+
+		Restaurant restaurantObj = (Restaurant)context.getBean("restaurantBean");
+		restaurantObj.greetCustomer();
+	}
+}
+#+END_SRC
+
+#+NAME: SpringConfig.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+  >
+
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+    </bean>
+
+    <!-- declare a bean HERE -->
+    <bean class="org.springframework.context.annotation.CommonAnnotationBeanPostProcessor"/>
+  </beans>
+#+END_SRC
+
+* implementing methods in InitializingBean and DisposableBean interfaces;
+
+#+BEGIN_EXAMPLE
+public void afterPropertiesSet() throw Exception{}
+#+END_EXAMPLE
+
+If spring find this method in Bean class and Bean class implements
+~InitializingBean~, it will be called to initialize Bean object immediately
+after the Bean object's construction.
+
+
+#+BEGIN_EXAMPLE
+public void destroy() throw Exception{}
+#+END_EXAMPLE
+
+If spring find this method in Bean class and Bean class implements
+~DisposableBean~, it will be called just before the Bean object's destruction.
+
+#+NAME: Restaurant
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
+
+public class Restaurant implements InitializingBean, DisposableBean{
+
+	public void greetCustomer() {
+		System.out.println("welcome dear customer~~, this is the LifeCycle demo!");
+	}
+
+    @Override
+    public void afterPropertiesSet() throws Exception{
+        System.out.println("Restaurant Bean is going through afterPropertiesSet");
+    }
+
+    @Override
+    public void destroy() throws Exception{
+        System.out.println("Restaurant Bean is destroying now");
+    }
+}
+#+END_SRC
+
+下面的代码我们会手动通过 ~context.registerShutdownHook~ 关闭 context, 而不是等到springframework 去关闭 context.
+
+#+BEGIN_QUOTE
+*registerShutdownHook()*
+----------------------
+
+*Register a shutdown hook* with the JVM runtime, closing this context on JVM
+shutdown *unless it has already been closed* at that time.
+
+这个方法不一定需要在 main 方法的最后才调用, 他会先判断这个 context 是否准备好被
+关闭. 也就是 main 方法执行完毕才会调用这个方法关闭 context.
+#+END_QUOTE
+
+
+*Why we should convert ~context~ to ~AbstractApplicationContext~, then call the
+~registerShutdownHook~.*
+
+某个接口的实现类, 可以强转到另一个抽象类型, 并去调用那个抽象类的方法.
+
+#+BEGIN_EXAMPLE
+                +------->   I: ConfigurableApplicationContext has method: registerShutdownHook()
+                |						 |                                          ^
+                |						 | is subinterface of                       .
+                |						 |                                          . call(after converting)
+                |						 v                implements                .
+                |			   I: ApplicationContext <------------------ C: ClassPathXmlApplicationContext
+    implements  |                                                                   .
+                |                                                                   .
+                |                                                                   .
+                |                                                                   . convert to
+                +--------A: AbstractApplicationContext    <..........................
+#+END_EXAMPLE
+
+
+
+
+
+~registerShutdownHook()~ gracefully shutdowns bean and preform finalization like
+calling the destroy methods. This is the method declared in the interface
+~ConfigurableApplicationContext~ which is implemented by
+~AbstractApplicationContext~,and it is not implemented by
+~ApplicationContext~.So the invokation of ~registerShutdownHook()~ only possible
+from the ~AbstractApplicationContext~'s object
+
+
+#+NAME: TestSpringProject
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestSpringProject {
+
+	public static void main(String[] args) {
+
+		ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+        ((AbstractApplicationContext)context).registerShutdownHook();
+
+		Restaurant restaurantObj = (Restaurant)context.getBean("restaurantBean");
+		restaurantObj.greetCustomer();
+
+	}
+
+}
+#+END_SRC
+
+#+NAME: SpringConfig
+#+BEGIN_SRC xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+>
+
+  <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+  </bean>
+
+</beans>
+
+#+END_SRC
+
+* 总结 Bean Life cycle methods 三种实现方法
+
+|   |                  | Bean class                                                                     | Spring config file                                                                                                   |
+|---+------------------+--------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------|
+| 1 | method + XMl     | declare method init()/destroy()                                                | individual:add ~init-method= / destroy-method=~ attr in Bean class                                                   |
+|   |                  |                                                                                | global: add ~default-init-method = / default-destroy-method=~ on top                                                 |
+|---+------------------+--------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------|
+| 2 | interface        | implments InitializingBean and DisposableBean interface                        | /                                                                                                                    |
+|---+------------------+--------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------|
+| 3 | annotation + XMl | add annotation @PostConstruct @PreDestroy to init-like and destroy-like method | add new bean declaration: ~<bean class="org.springframework.context.annotation.CommonAnnotationBeanPostProcessor"/>~ |

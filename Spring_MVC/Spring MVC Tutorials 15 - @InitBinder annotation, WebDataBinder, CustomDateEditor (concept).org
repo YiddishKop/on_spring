@@ -1,0 +1,107 @@
+#+TITLE: Spring MVC Tutorials 15 - @InitBinder annotation, WebDataBinder, CustomDateEditor (concept)
+
+How to customize data binding feature.
+
+
+Before this lecture, we learned that we can bind all the request parameters with
+attributes of a predefined class in request handler. Then we using BindingResult
+parameters to tip the type-mismatch-error between the request parameters passed
+in and the attributes of predefined class. Now, we want to bind all request
+parameters *except for* the tyep-mismatch ones, how to do that!
+
+With the help of two main concepts: *WebDataBinder* concept and *data binder
+annotation*.
+
+SpringMVC says whenever we want to customize data binding feature for a
+particular controller class then you add a function in that controller class
+with any name of your choice, like here ~initBinder()~, but must place the
+~@InitBinder~ on top and the ~WebDataBinder~ type parameter.
+
+#+BEGIN_QUOTE
+使用定制化的 databinder 两个条件:
+1. @InitBinder 标签
+2. WebDataBinder 类型参数
+#+END_QUOTE
+
+* a basic example
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  @Controller
+  public class StudentAdmissionController {
+
+      @InitBinder
+      public void initBinder(WebDataBinder binder){
+          binder.setDisallowedFields(new String[] {"studentModile"});
+      }
+  ...
+  }
+#+END_SRC
+
+有了这个 initBinder 方法之后, 从 AdmissionForm.JSP 传过来的 request parameters
+中的 name=studentMobile 的项就不会被绑定到 student.mobile 属性上(也就是说这个属
+性值为null), 当 Request handler 处理请求发给FrontController, 再发给
+SuccessAdmission.JSP 进行显示时, 页面上这个 student.mobile 地方就是空值.
+
+* a advanced example
+
+Note: we will introduce a new concept: *property editor*.
+
+Recall that, in the admissionForm page we input a specific format of Student's
+DOB, ~yyyy/mm/dd~, like 2018/12/01. When we submit the value, SpringMVC bind the
+this value with the ~private Date studentDOB~ attribute of Student object. The
+problem is when we use other format, like ~yyyy****mm****dd~, SpringMVC will
+fail to bind.
+
+ *The question is: how to allow user to provide date in some customized format
+ of your choice!*
+
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  @Controller
+  public class StudentAdmissionController {
+
+      @InitBinder
+      public void initBinder(WebDataBinder binder){
+          binder.setDisallowedFields(new String[] {"studentModile"});
+          simpleDateFormat dateFormat = new SimpleDateFormat("yyyy****MM****dd");
+          binder.registerCustomEditor(Date.class, "studentDOB", new CustomDateEditor(dateFormat, false));
+      }
+  ...
+  }
+#+END_SRC
+
+
+#+BEGIN_SRC java
+  binder.registerCustomEditor(Date.class, "studentDOB", new CustomDateEditor(dateFormat, false));
+#+END_SRC
+This line tell SpringMVC that when you perfomring data binding task for this
+controller class, you would be doing the task for request parameter with the
+name ~"studentDOB"~ which is having date type ~Date.class~. Then you simply
+follow the date format provided in ~new CustomDateEditor()~ for performing data
+binding task.
+
+** More about the ~CustomDateEditor~
+
+SpringMVC internally uses a concept called *property editors* in order to
+perform *data binding tasks*. SpringMVC has many built-in classes called
+property editor classes, ~CustomDateEditor~ is one of such classes, beside
+~FileEditorClass~, ~CustomNumberEditor~ are all of this kind of class. SpringMVC
+uses property editor class to perform *type conversion* while perfomring data
+binding. SpringMVC says to develper like that, hi coder, I give you a list of
+property editor classes, you can use a *particular property property editor
+class* to *customize* data binding for a *particular data type*. Here, we use
+~CustomDateEditor~ class to customize data binding for *date* type binding.
+
+#+BEGIN_EXAMPLE
+                                         对发起 request JSP 传进来        自定义的可以转换成
+                                         的哪个参数名的值使用             Date 类型的字符串格式
+                                         这种类型转换
+                                            v                                  v
+binder.registerCustomEditor(Date.class, "studentDOB", new CustomDateEditor(dateFormat, false));
+                            ----------                    ----------------
+                       针对何种数据类型                   使用何种属性编辑器类型
+                       提供定制化的类型                   与第一个参数应该保持一致
+                       转换服务
+#+END_EXAMPLE

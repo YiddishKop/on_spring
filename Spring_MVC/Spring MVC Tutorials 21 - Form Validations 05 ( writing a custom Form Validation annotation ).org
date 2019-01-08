@@ -1,0 +1,119 @@
+#+TITLE: Spring MVC Tutorials 21 - Form Validations 05 ( writing a custom Form Validation annotation )
+
+A continuous lecture of previous one, how to writing a *custom Form Validation
+Annotation*.
+
+*如何保证 Student's Hobby 表单中输入的是有效的给定列表中的 Hobby*
+
+比如你只能从 *Music, Football, Cricket, Hockey* 选择一个输入. 如果你输入的 Hobby
+不在列表中那么返回的错误信息应该给出所有可用的 Hobby. 这个功能 SpringMVC 中所有
+预定义的 Annotation 都无法满足. 所以我们只能自己定义.
+
+那么如何定义自己的 form validation annotation 呢.
+
+SpringMVC says, you developers if you find any predefiend annotations of
+SpringMVC can not fit for your specific project requirement, you can define it
+your own following these *two* steps.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-02 23:01:49
+[[file:screenshot_2018-12-02_23-01-49.png]]
+
+
+* 创建自己的 Form Validation Annotation
+
+** 定义 Annotation 的名字: IsValidHobby
+
+这个文件名 'IsValidHobby.java' 也就是 Annotation 的名字 '~@IsValidHobby~'. 在这
+个文件中大部分都是一些通用代码(mandatory), 需要开发者做的只有两件事情:
+1. 指明 *怎么算违反*: ~@Constraint(validatedBy=HobbyValidator.class)~, 其中
+   validatedBy 后面跟的是开发者定义的另一个源代码文件的名称
+   ~HobbyValidator.java~.
+2. 指明 *违反之后的显示信息*: ~String message() default "String type information
+   return to client's browser"~
+
+#+NAME: IsValidHobby.java
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+  @Documented                                         // <- mandatory
+  @Constraint(validatedBy = HobbyValidator.class)     // <- user-define: specify
+                                                      // the action when invalid
+                                                      // happens
+  @Target({ElementType.FIELD})                        // <- mandatory
+  @Retention(RetentionPolicy.RUNTIME)                 // <- mandatory
+  public @interface IsValidHobby{                     // <- mandatory
+
+                                                      // <- user-define: the
+                                                      // message, in case of
+                                                      // invalidation
+      String message() default "Please provide a valid Hobby;" +
+          "accepted hobbies are - Music, Football, Cricket and Hockey (choose anyone)";
+
+      /*
+        这里注意, 第一个 'Payload' 是大写, 第二个 'payload' 是小写
+       ,*/
+      Class<?>[] groups() default {};                 // <- mandatory
+      Class<? extends Payload>[] payload() default {};// <- mandatory
+  }
+#+END_SRC
+
+这里文件的名字就会成为之后 Annotation 的名字 --- ~@IsValidHobby~.
+
+#+BEGIN_SRC java
+  @Constraint(validatedBy = HobbyValidator.class)
+#+END_SRC
+
+Here the value of ~validatedBy~ is the logic process to constraint the format of
+form input. You must define a class and assign its name suffix with ~.class~ to
+~validatedBy~
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-03 06:37:35
+[[file:创建自己的 Form Validation Annotation/screenshot_2018-12-03_06-37-35.png]]
+
+** 定义 *如何算违反*: HobbyValidator.java
+
+Validator 类一般需要实现一个接口(~ConstraintValidator<AnnotationName, String>~),
+其中 '~AnnotationName~' 部分指定了我的这个 validator 是 *与谁伴生* 的. 并且需要
+重写这个接口的两个函数:
+1. ~intialize(AnnotationName ref)~: 不需要什么代码,只需要注意里面的
+   AnnotationName 是我们前面定义的那个Annotation类型即可.
+2. ~isValid(String propertyNameWeWantToValid, ConstraintValidatorContext ctx)~:
+   这里需要针对函数的第一个参数给予验证处理, 整个函数返回 boolean 值.
+
+#+NAME: HobbyValidator.java
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+  import javax.validation.ConstraintValidator;
+  import javax.validation.ConstraintValidatorContext;
+  public class HobbyValidator implements ConstraintValidator<IsValidHobby, String> {
+      @Override
+      public void initialize(IsValidHobby isValidHobby){
+      }
+      @Override
+      public boolean isValid(String studentHobby, ConstraintValidatorContext ctx) {
+          if(studentHobby == null){
+              return false;
+          }
+          if(studentHobby.matches("Music|Football|Cricket|Hockey")){
+              return true;
+          } else {
+              return false;
+          }
+      }
+  }
+#+END_SRC
+
+* 使用自定义的 Annotation
+
+使用这个 Annotation 则非常简单, 在你要验证的属性上进行声明即可.
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+public class Student {
+    // ...
+    @Size(min=2, max=30)
+    @IsValidHobby
+	private String studentHobby;
+    // ...
+}
+#+END_SRC

@@ -1,0 +1,389 @@
+#+TITLE: Spring MVC Tutorials 10 - Handling an HTML form using @RequestParam annotation
+
+Introduction to how to write and handle html forms in spring MVC application.
+
+* The interaction process
+#+BEGIN_EXAMPLE
+
+                                  request.GET (拉取网页)
+client input URL, press ENTER <----------------------------->  FrontController <---------> ViewResolver
+                                                                     ^                           ^
+                                                                     |                           |
+                                                                     |                           |
+                                                                     v                           v
+                                                    studentAdmissionController             according to the 'name'
+                                                    ^                                      'prefix' and 'sufix',
+                                                    |                                      get the location of JSP.
+                                                    |                                      and fill the placeholder
+                                                    v                                      with content in ModelAndView.
+                                            getAdmissionForm
+                                            [return ModelAndView object
+                                            - name of JSP: AdmissionForm
+                                                               -------------
+                                            - content of JSP placeholder]
+
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+                                  request.POST (提交信息,拉取网页)
+client input URL, press ENTER <------------------------------------->  FrontController <---------> ViewResolver
+display the page of request: AdmissionForm.html                               ^
+                             ------------------                               |
+then, slot information into the blank input box                               |
+           -----------                                                        |
+press 'Submit' button                                                         |
+      -------                                                                 |
+                                                                              v
+                                                             studentAdmissionController
+                                                             ^
+                                                             |
+                                                             |
+                                                             v
+                                                    submitAdmissionForm
+                                                    [ get submit info by POST parameter,
+                                                      return ModelAndView object
+                                                      - name of JSP: AdmissionSuccess
+                                                                     ----------------
+                                                      - content of JSP placeholder]
+#+END_EXAMPLE
+
+
+上面显示的信息就是通过 *表单* 来把某个 *动作* 与某个 *URL* 绑定并且提交信息的过
+程.也就是说,现在我们不仅仅可以只通过输入 URL 网址来访问资源, 也可以通过某些 *页
+面控件* 来访问服务器资源.
+
+* Request type: GET and POST
+
+在这个过程中, 引入概念: *Request 方法类型*, request 是向服务器 *申请* 资源, 他有
+多种类型,最常用的是 *GET* 和 *POST*, 其中 *GET* 是默认的, 而 *POST* 是需要由控件
+指定的访问方式. 比如足记项目中的 *删除浏览记录* 的操作.
+
+在服务器端, FrontController 现在可以基于两个条件来筛选合适的 controller(data
+generator):
+1. URL : ~@RequestMapping(value='/FirstSPringMVCProject/submitAdmission.html')~
+2. request type:
+   ~@RequestMapping(value='/FirstSPringMVCProject/submitAdmission.html,
+   method=RequestMethod.POST')~
+
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+
+@Controller
+public class StudentAdmissionController {
+
+    @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+    public ModelAndView getAdmissionForm(){
+        ModelAndView model = new ModelAndView("AdmissionForm");
+
+        return model;
+    }
+
+    @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+    public ModelAndView submitAdmissionForm(
+        @RequestParam("studentName") String name,
+        @RequestParam("studentHobby") String hobby
+        ){
+
+        ModelAndView model = new ModelAndView("AdmissionSuccess");
+        model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+
+        return model;
+    }
+}
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+                                                 This method can ONLY process 'GET' type request.
+                                                 ________________________
+    @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+    public ModelAndView getAdmissionForm(){
+        ModelAndView model = new ModelAndView("AdmissionForm");
+        return model;
+    }
+#+END_EXAMPLE
+
+
+The default every browser sentds a ~GET~ request when you type a URL in the
+address bar and hit enter.
+
+Then you get the URL resource, and it was displayed as html in client's browser.
+It is :
+
+#+NAME: admissionForm.html
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1> STUDENT ADMISSION FORM FOR ENGINEERING COURSES </h1>
+    <form method="post" action="/FirstSpringMVCProject/submitAdmissionForm.html">
+      <p>
+        Student's Name: <input type="text" name="studentName" />
+      </p>
+      <p>
+        Student's Hobby: <input type="text" name="studentHobby" />
+      </p>
+      <input type="submit" name="Submit this form, by clicking here"/>
+    </form>
+  </body>
+</html>
+#+END_SRC
+
+现在你填写信息, 然后点击 submit button, 这时候他会自动提交信息并跳转, 可以是我并
+没有输入网址啊,他是怎么知道我在申请什么资源呢. 毕竟 FrontController 只会根据 URL
+pattern 和 Request 类型(GET/POST)信息来寻找合适的 controller.
+
+#+BEGIN_EXAMPLE
+                 request type  request URL
+                 _____         _________________________________________________
+    <form method="post" action="/FirstSpringMVCProject/submitAdmissionForm.html">
+      <p>
+        Student's Name: <input type="text" name="studentName" />
+      </p>
+      <p>
+        Student's Hobby: <input type="text" name="studentHobby" />
+      </p>
+      <input type="submit" name="Submit this form, by clicking here"/>
+    </form>
+#+END_EXAMPLE
+
+表单(form)通过 ~POST~ 方式提交的信息会以 name-value pair --- ~@RequestParam~ 的
+方式传递给 controller.
+
+#+BEGIN_EXAMPLE
+      <p>
+                                                 form 提供 name-value pair 的 name
+                                                 ___________
+        Student's Name: <input type="text" name="studentName" />  // 用户输入的信息作为 value
+      </p>
+
+    @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+    public ModelAndView submitAdmissionForm(
+        @RequestParam("studentName") String name,
+                       -----------
+                       与 JSP 页面提供的 'name=studentName' 一致, 用来从name-value pair 中获取 'value'
+        @RequestParam("studentHobby") String hobby
+                       ------------
+                       同上
+        ){
+        ModelAndView model = new ModelAndView("AdmissionSuccess");
+        model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+        return model;
+    }
+#+END_EXAMPLE
+
+* Default value of Request parameters
+
+你可以提供默认值给 @Requestparam 标签,就像这样:
+~@RequestParam(value="studentName", defaultValue="Mr. ABC")~, 如此一来即便你不在
+form表单中填写信息,也会默认给予你指定的值作为 RequestParameter 的 value.
+
+#+NAME: StudentAdmissionController.java with default RequestParameter value
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.bind.annotation.RequestMethod;
+  import org.springframework.web.bind.annotation.RequestParam;
+  import org.springframework.web.servlet.ModelAndView;
+
+
+  @Controller
+  public class StudentAdmissionController {
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model = new ModelAndView("AdmissionForm");
+          return model;
+      }
+
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @RequestParam(value="studentName",defaultValue="Mr. ABC") String name,
+          @RequestParam("studentHobby") String hobby
+          ){
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+          return model;
+      }
+  }
+#+END_SRC
+
+* Using Map<String,String> to get all request parameters
+
+  Like what we do in the ~@RequestMapping~, we also can get all request parameters using ONLY ONE clause:
+
+  #+BEGIN_SRC java
+  @Controller
+  public class HelloController {
+      // @RequestMapping("/welcome/countryName/userName")
+      @RequestMapping("/welcome/{countryName}/{userName}")
+      protected ModelAndView handleRequestInternal(
+          @PathVariable Map<String,String> pathVars        // <-
+          ) throws Exception {
+          String name = pathVars.get("userName");          // <-
+          String country = pathVars.get("countryName");    // <-
+          ModelAndView modelandview = new ModelAndView("HelloPage");
+          modelandview.addObject("welcomeMessage", "Hi " + name + ", you coming from" + country);
+          return modelandview;
+      }
+  }
+  #+END_SRC
+
+In controller method, we can use ~Map<String,String>~ collection type after ONLY
+one parameter with annotation ~@PathVariable~ and get the value by
+~.get(pathVariable)~, instead of declaring multiple parameters with annotation
+~@PathVariable(pathVariable)~ and refer to them using the variable declared for
+the parameter.
+
+1. 函数之外: @RequestMapping( ~"/xxx/{userName}"~ ) 中声明
+2. 函数参数中: @PathVariable( ~"userName"~ ) String ~name~ 声明
+3. 函数体内: 引用 ~name~
+
+#+BEGIN_SRC java
+  @Controller
+  public class HelloController {
+      // @RequestMapping("/welcome/countryName/userName")
+      @RequestMapping("/welcome/{countryName}/{userName}")
+      protected ModelAndView handleRequestInternal(
+          @PathVariable("userName") String name,
+          @PathVariable("countryName") String country
+          ) throws Exception {
+          ModelAndView modelandview = new ModelAndView("HelloPage");
+          modelandview.addObject("welcomeMessage", "Hi " + name + ", you coming from" + country);
+          return modelandview;
+      }
+  }
+#+END_SRC
+
+1. 函数之外: @RequestMapping( ~"/xxx/{userName}"~ ) 中声明
+2. 函数参数中: @PathVariable ~Map<String,String> pathVars~ 声明
+3. 函数体内: 引用 ~pathVars.get("userName")~
+
+
+对于这里的 @RequestParam 也是类似的:
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.bind.annotation.RequestMethod;
+  import org.springframework.web.bind.annotation.RequestParam;
+  import org.springframework.web.servlet.ModelAndView;
+
+  @Controller
+  public class StudentAdmissionController {
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model = new ModelAndView("AdmissionForm");
+          return model;
+      }
+
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @RequestParam(value="studentName",defaultValue="Mr. ABC") String name,
+          @RequestParam("studentHobby") String hobby
+          ){
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+          return model;
+      }
+  }
+#+END_SRC
+
+#+NAME: StudentAdmissionController.java with Map as type of parameter
+#+BEGIN_SRC java
+  @Controller
+  public class StudentAdmissionController {
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model = new ModelAndView("AdmissionForm");
+          return model;
+      }
+
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @RequestParam(value="studentName",defaultValue="Mr. ABC") String name,
+          @RequestParam("studentHobby") String hobby
+          ){
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+          return model;
+      }
+  }
+#+END_SRC
+
+1. 文件之外: form 表单携带 ~name=xxx~ ~hobby=yyy~ 提交 POST 请求
+2. 函数之外: @RequestMapping( value="/xxx/{userName}",
+   ~method=RequestMethod.POST~ ) 中声明
+3. 函数参数中: @Pathparam( ~"name"~ ) String ~name~ 声明
+4. 函数体内: 引用 ~name~
+
+
+#+NAME: StudentAdmissionController.java with Map as type of parameter
+#+BEGIN_SRC java
+  @Controller
+  public class StudentAdmissionController {
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model = new ModelAndView("AdmissionForm");
+          return model;
+      }
+
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @RequestParam Map<String,String> reqPars
+          ){
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          String name = reqPars.get("name");
+          String hobby = reqPars.get("hobby");
+          model.addObject("msg", "details submitted by you:: Name:"+name+", Hobby: " + hobby);
+          return model;
+      }
+  }
+#+END_SRC
+
+
+1. 文件之外: form 表单携带 ~name=xxx~ ~hobby=yyy~ 提交 POST 请求
+2. 函数之外: @RequestMapping( value="/xxx/{userName}",
+   ~method=RequestMethod.POST~ ) 中声明
+3. 函数参数中: @Pathparam ~Map<String,String> reqPars~ 声明
+4. 函数体内: 引用 ~reqPars.get("name")~
+
+
+* 总结
+
+** @RequestParam 的集合用法
+从:
+1. 文件之外: form 表单携带 ~name=xxx~ ~hobby=yyy~ 提交 POST 请求
+2. 函数之外: @RequestMapping( value="/xxx/{userName}",
+   ~method=RequestMethod.POST~ ) 中声明
+3. 函数参数中: @Pathparam( ~"name"~ ) String ~name~ 声明
+4. 函数体内: 引用 ~name~
+
+变成:
+
+1. 文件之外: form 表单携带 ~name=xxx~ ~hobby=yyy~ 提交 POST 请求
+2. 函数之外: @RequestMapping( value="/xxx/{userName}",
+   ~method=RequestMethod.POST~ ) 中声明
+3. 函数参数中: @Pathparam ~Map<String,String> reqPars~ 声明
+4. 函数体内: 引用 ~reqPars.get("name")~
+
+** @PathVariable 的集合用法
+从:
+
+1. 函数之外: @RequestMapping( ~"/xxx/{userName}"~ ) 中声明
+2. 函数参数中: @PathVariable( ~"userName"~ ) String ~name~ 声明
+3. 函数体内: 引用 ~name~
+
+变成:
+
+1. 函数之外: @RequestMapping( ~"/xxx/{userName}"~ ) 中声明
+2. 函数参数中: @PathVariable ~Map<String,String> pathVars~ 声明
+3. 函数体内: 引用 ~pathVars.get("userName")~

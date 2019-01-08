@@ -1,0 +1,94 @@
+#+TITLE: Spring MVC Tutorials 24 - Interceptor 02 ( more on understanding basics of it...)
+
+Beside the method ~preHandle()~, ~HandlerInterceptorAdapter~ has two more
+important methods: ~postHandle()~ and ~afterCompletion()~.
+
+1. preHandle()
+2. postHandle()
+3. afterCompletion()
+
+
+when preHandle return true for any web page requests this application, the
+application further handles our process that request. This just means
+application performs two major steps in order to produce the response object.
+
+
+#+BEGIN_EXAMPLE
+  preHandle                    postHandle              afterCompletion
+       ^                         ^                        ^
+       |                         |                        |
+       |         +-----------+   |           +--------+   |
+  ------------>  |Controller | ----------->  | View   | ----------> FrontController return
+                 +-----------+               +--------+             the View object to client.
+#+END_EXAMPLE
+
+#+NAME: DayOfWeekBasedAccessInterceptor.java
+#+BEGIN_SRC java
+  public class DayOfWeekBasedAccessInterceptor extends HandlerInterceptorAdapter{
+
+      @Override
+      public boolean preHandle(
+          HttpServletRequest request,
+          HttpServletResponse response,
+          Object handler
+          ) throws Exception{
+          Calendar cal = Calendar.getInstance();
+          int dayOfWeek = cal.get(cal.DAY_OF_WEEK); // getting the day on wich request is made
+          if(dayOfWeek == 1) {
+              //1 means Sunday;2 means Monday...;7 means Satday
+              response.getWriter().write("The website is closed on Sunday; please try accessing it" + "on any other week day!!!");
+              return false;
+          }
+          // if this method returns true then - application will further handler the request
+          // if this method returns false then - application will not further handle the request.
+          return true;
+      }
+
+      @Override
+      public void postHandle(
+          HttpServletRequest request,
+          HttpServletResponse response,
+          Object handler,
+          ModelAndView modelAndView
+          ){
+          // this method would be called after SpringMVC executes the request handler method for the request
+          System.out.println("HandlerInterceptroAdapter: Spring MVC called postHandle method for" + request.getRequestURI().toString());
+      }
+
+      @Override
+      public void afterCompletion(
+          HttpServletRequest request,
+          HttpServletResponse response,
+          Object handler,
+          Exception ex
+          ){
+          // this method would be called after the response object is produced by the view for the request
+          System.out.println("HandlerInterceptroAdapter: Spring MVC called aftercompletion method for" + request.getRequestURI().toString());
+      }
+  }
+#+END_SRC
+
+这样 Interceptor 的三个方法需要通过 ~spring-dispatcher-sevlet.xml~ 来进行注册,
+这样注册之后就是告诉 SpringMVC framework 以后任何request都需要先通过这个
+Interceptor: preHandle, postHandle, afterCompletion 三个方法走一遍.
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <mvc:interceptors>
+    <bean class="com.gontuseries.studentadmissioncontroller.DayOfWeekBasedAccessInterceptor" />
+  </mvc:interceptors>
+#+END_SRC
+
+*如果我不希望这个 Interceptor 对所有的 request 都启用, 而是只针对某个 URL 的
+ Request 才启用该 Interceptor, 该怎么办呢.*
+
+我们就需要对 spring-dispatcher-servlet.xml 做一些改变, 注明这个 Interceptor 类只
+针对某个 URL 启用.
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <mvc:interceptors>
+    <mvc:mapping path="/admissionForm.html"/>
+    <bean class="com.gontuseries.studentadmissioncontroller.DayOfWeekBasedAccessInterceptor" />
+  </mvc:interceptors>
+#+END_SRC

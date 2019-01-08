@@ -1,0 +1,166 @@
+#+TITLE: lec-01: Introduction to Spring Framework
+
+Inversion of control(IOP), or Dependency injection(DI)
+
+Spring created by *Rod Johnson* in 2003.
+
+I'll tell you advanced features builded based on spring framework.like spring
+web services, spring batch etc.
+
+content of this lecture: *Core component of spring framework*.
+
+#+BEGIN_EXAMPLE
++-------------------------------------------------------------------+
+|                        Spring Framework                           |
+|                                                                   |
+| +--------------------------------------+   +-------------------+  |
+| |     DI or IOP   framework            |   |   AOP framework   |  |
+| +--------------------------------------+   +-------------------+  |
+| +--------------------------------------+   +-------------------+  |
+| |   Data access/integration framework  |   |   MVC framework   |  |
+| +--------------------------------------+   +-------------------+  |
+| +--------------------------------------------------------------+  |
+| |                       Test framework                         |  |
+| +--------------------------------------------------------------+  |
++-------------------------------------------------------------------+
+#+END_EXAMPLE
+
+PS: Spring provides a list of advanced features called *spring projects* as
+separate jar or set of jars. [[http://spring.io/projects][see here]]
+
+* 1st module: dependency injection or IOP container or core-spring framework
+
+
+it says is you should not be creating or instantiating an object inside another
+java class. instead, rely on spring's IOP module to create the object for you.
+
+
+#+NAME: problem of injection
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  Class A{
+      functionA{
+          /**
+           ,* class A is completely dependent on class B.
+           ,*
+           ,* (1) Modifications in class B ---> may force you to modify class A as well;
+           ,*
+           ,* (2) Replacing class B with a new class C ---> will force you to modify A also.
+           ,*/
+          B objectB = new B();
+      }
+  }
+#+END_SRC
+
+* 2nd module: Aspect-oriented programming framework
+
+Aspect-oriented is another concept as we have OOP in the programming world.
+
+If there is a certain thing you are using in a project, which is not part of the
+main business logic(eg: logging, transaction management), then why including all
+such things as part of your main business logic.
+
+In one world: Do not mix non-business logic with actuall business logic in your classes.
+
+
+#+NAME: problem of mix non-business logic with business logic
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  public class Calculator{
+      private int addition;
+
+      public boolean addition(int a, int b){
+          logger.info("Enterred into Calculator.addition(a,b) method");
+
+          try{
+              addition = a + b;
+          }catch(Exception e){
+
+              logger.error("Exiting from Calculator.addition(a,b) method");
+          }
+
+          logger.info("Exiting from Calculator.addition(a,b) method");
+
+          return addition;
+      }
+  }
+#+END_SRC
+
+In the code above, our main business logic is adding two numbers, that is ~a+b~.
+Then what these things are doing in the same function, here what we are doing is
+we are mixing both functional implementations that is adding two numbers and
+non-functional implementation that is all these logging statements at the same
+place which in future may lead to a greater difficulty in managing your Java
+project.
+
+This spring module provides you with a simple mechanism of how you can implement
+all such non-functional or non-business things as a separate entity, just like
+you have a separate class for a separate responsibility in your project, such
+that you won't see any such statements in your business functions.
+
+#+BEGIN_QUOTE
+You will be able to see logs but ... without writing a single log statement
+within your functions *using a configuration file*.
+#+END_QUOTE
+
+
+Not only the logging, but also caching, transaction management, are all
+non-business logic.
+
+* 3rd module: Data acess/integration framework
+
+It includs 5 sub modules in it:
+1. JDBC
+2. ORM
+3. OXM
+4. JMS
+5. Transaction Management
+
+** spring JDBC
+If you're using spring JDBC then you're so relaxed when it comes to Java
+database interactions while performing any database operation,
+- you will not need to write a single statement for opening and closing of
+  database connections,
+- you do not need to write any exception handling code, prepare statements and
+  execute statements would be handled by spring itself.
+- you do not need to manage result sets at all, because you get the collection
+  object of your choice having desired object or objects from the database
+  itself.
+
+If for some reason, you don't want to use spring JDBC or plain JDBC, this module
+provides you the full API support to integrate 3rd-party and tools like
+*hibernate, ibatis, JPA* etc with spring framework.
+
+** spring OXM
+
+   Converting a Java object to XML or XML to a Java object.
+
+   provides full API support to integrate OXM frameworks like: JAXB, Castor,
+   JiBX etc.
+
+** spring JMS
+
+   Java Messaging Service
+
+   provides full API support produce and consume message from JMS queues.
+
+** spring Transaction Management
+
+    provides two ways of Transaction Management:
+
+    1. programmatic way
+    2. declarative way
+
+
+    I will cover every bit of Transaction Management in detail... will exactly
+    tell you *Why Spring Transaction Management*.
+
+    [Questions] Is is necessary to use EJBs for transaction management ???
+
+    I will answer this and many other important questions in detail.
+
+* 4th module: Model-view-controller framework
+  Using this you can build a complete web application using MVC design pattern
+  in a very simple ways.
+
+* 5th module: Test Framework
+  it provides you a complete support for testing spring components with Junit or
+  testng frameworks.

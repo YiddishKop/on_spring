@@ -1,0 +1,92 @@
+#+TITLE: lec-11: Lazy loading and Pre-loading of a Bean
+
+
+* Lazy loading of Beans
+
+By defautl, Spring loads and instanciate *ALL SINGLETON BEANS* mensioned in the
+~SpringConfig.xml~, at the application *START-TIME* --- when the
+~ApplicationContext context = new ClassPathXmlApplicationContext("xxx.xml")~
+runs.
+
+This means that, if declare the ~scope="singlton"~ in ~SpringConfig.xml~ , when
+you get object using ~getBean()~ method, what it gives back to you *is the
+Objects that have been built in the first line code*. This is a *default
+behavior* when you use ~context~.
+
+But you can *change* this *default behavior* by instruct the Spring framework,
+not to build object in the first step with the help of ~lazy-init="true"~ , and
+sett it up in the ~SpringConfig.xml~
+
+#+NAME: TestSpringProjectBeanScope.java
+#+BEGIN_SRC java
+  package org.gontuseries.springcore;
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+  public class TestSpringProjectBeanScope {
+
+      public static void main(String[] args) {
+          // ----> Builded Here!
+          ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+          // ----> Give it to you Here!
+          Restaurant restaurantObj1 = (Restaurant) context.getBean("restaurantBean");
+          restaurantObj1.setWelcomeNote("Object1 is setting welcome note property");
+          restaurantObj1.greetCustomer();
+
+          Restaurant restaurantObj2 = (Restaurant) context.getBean("restaurantBean");
+          restaurantObj2.greetCustomer();
+
+          System.out.println(restaurantObj1 == restaurantObj2);
+      }
+  }
+
+#+END_SRC
+
+#+NAME: Default Behavior: pre-loading
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- scope property -->
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" scope="prototype">
+    </bean>
+
+  </beans>
+
+#+END_SRC
+
+#+NAME: Change Default Behavior: Lazy-loading
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- scope property -->
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" scope="prototype" lazy-init="true">
+    </bean>
+
+  </beans>
+
+#+END_SRC
+
+This ~lazy-init="true"~ will make the springframework *ONLY* create object which
+is *singlton in SpringConfig.XML file* the time when you call ~getBean()~
+method, not do this in the first step at instanciate the context
+
+
+
+* BeanFactory interface
+
+The biggest difference between ~BeanFactory~ interface and ~ApplicationContext~
+interface is the previous one is ALWAYS perform the ~lazy-init="true"~, means
+they're different in *loading and instanciate beans*.
+
+
+| interface          | bean loading behavior |
+|--------------------+-----------------------|
+| BeanFactory        | lazy-loading          |
+| ApplicationContext | pre-loading           |

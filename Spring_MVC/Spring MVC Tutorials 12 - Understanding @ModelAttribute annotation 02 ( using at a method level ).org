@@ -1,0 +1,68 @@
+#+TITLE: Spring MVC Tutorials 12 - Understanding @ModelAttribute annotation 02 ( using at a method level )
+
+
+把 @ModelAttribute 用在 *方法* 之上.
+
+Go on introducing the ~@ModelAttribute~, this lecture how to use it at a *method
+level*, along with looking at some *more fundamental concepts* which are related
+to this annotation.
+
+把 @ModelAttribute 用在某个 request handler 方法定义之上, 那么在这个方法内无论你
+给 model 添加什么 *内容*, SpringMVC 都会自动的把 *这些内容* 添加到 *该类的其他*
+request handler method 内的 model 中.
+
+这种操作有点类似于,我们在多次使用某个常量时,就可以给这个常量定义一个名字,然后直
+接引用该名字即可. 这里更为 *"极端"*, 你只需要在 @ModelAttribute 的 request
+handler 内对 model 对象添加对象, 这个被添加的对象就默认加入其他 request handler
+函数操作的 model 对象之内.
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+
+  import java.util.Map;
+
+  import org.springframework.stereotype.Controller;
+  import org.springframework.ui.Model;
+  import org.springframework.web.bind.annotation.ModelAttribute;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.bind.annotation.RequestMethod;
+  import org.springframework.web.bind.annotation.RequestParam;
+  import org.springframework.web.servlet.ModelAndView;
+
+
+  @Controller
+  public class StudentAdmissionController {
+
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model1 = new ModelAndView("AdmissionForm");
+          // 下面的语句可以注调
+          // model1.addObject("headerMessage", "Gontu college of Engineer, India");
+          return model1;
+      }
+
+      @ModelAttribute
+      public void addingCommonObjects(Model model1) {
+          // 有了下面这条语句,就可以把其他所有 request handler 的相同语句删掉了
+          // 在 @ModelAttribute 的加持下,这个函数能阳光普照般的给其他 model
+          // 添加对象.
+          model1.addAttribute("headerMessage", "Gontu College of Engineer, India");
+      }
+
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @ModelAttribute("student1") Student student1
+          ){
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          // 下面的语句可以注调
+          // model.addObject("headerMessage", "Gontu College of Engineer, India");
+          return model;
+      }
+  }
+#+END_SRC
+
+这三节关于 @ModelAttribute 的学习, 不但让你可以对传递个 FrontController 的不同
+model 定义管理类(比如这里的 student), 以达到 JSP 页面的不同 placeholder 进行分类
+管理(通过 ~stu.attribute~ ) . 还能在 controller 中针对多个 request handler 共有
+的 object 定义一个添加公共object的函数, 以起到减少代码的作用.

@@ -1,0 +1,148 @@
+#+TITLE: lec-15: implementing Ordered interface in a BeanPostProcessor
+
+
+If you have *more than one BeanPostProcessor* in your application, then what is
+the really order spring calls each BeanPostProcessor before and after each Bean
+obj initializaiton.
+
+And if you want the order of the BeanPostProcessor, what should do.
+
+You can provide your customize order in every BeanPostProcessor class by
+implements ~Ordered~ interface. Spring will consider that order value, and reset
+the order of calling BeanPostProcessor.
+
+* 源码
+
+#+NAME: TestProjectProjectBeanPostProcessor
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestProjectProjectBeanPostProcessor {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+		((AbstractApplicationContext)context).registerShutdownHook();
+
+		Restaurant restaurantObj = (Restaurant)context.getBean("restaurantBean");
+		restaurantObj.greetCustomer();
+	}
+}
+#+END_SRC
+
+#+NAME: Restaurant
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+public class Restaurant {
+	public void greetCustomer() {
+		System.out.println("welcome dear customer!!! This is lifecycle demo");
+	}
+
+	public void init() {
+		System.out.println("Restaurant is going to be init");
+	}
+	public void destroy() {
+		System.out.println("Restaurant is going to be destroy");
+	}
+}
+#+END_SRC
+
+#+NAME: DemoBeanPostProcessor2
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.core.Ordered;
+
+public class DemoBeanPostProcessor2 implements BeanPostProcessor, Ordered{
+	// just record initialization for this Bean object
+    // arg0 is the actually Bean object, arg1 is the Bean name
+    // by this method you can modify Bean object.
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException{
+        System.out.println("DBP2: processing bean instance after initialization(i.e just after init life cycle bean) of: " + beanName);
+        return bean;
+    }
+
+    // will be executed before Bean object is initialized completely
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException{
+        System.out.println("DBP2: processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: " + beanName);
+        return bean;
+    }
+
+    @Override
+    public int getOrder(){
+        return 1;
+    }
+}
+#+END_SRC
+
+#+NAME: DemoBeanPostProcessor1
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.core.Ordered;
+
+public class DemoBeanPostProcessor1 implements BeanPostProcessor, Ordered{
+	// just record initialization for this Bean object
+    // arg0 is the actually Bean object, arg1 is the Bean name
+    // by this method you can modify Bean object.
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException{
+        System.out.println("DBP1: processing bean instance after initialization(i.e just after init life cycle bean) of: " + beanName);
+        return bean;
+    }
+
+    // will be executed before Bean object is initialized completely
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException{
+        System.out.println("DBP1: processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: " + beanName);
+        return bean;
+    }
+
+    @Override
+    public int getOrder(){
+        return 0; // the smaller the front it'll be called
+    }
+}
+#+END_SRC
+
+#+NAME: SpringConfig
+#+BEGIN_SRC java
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" init-method="init" destroy-method="destroy">
+    </bean>
+
+    <bean class="org.gontuseries.springcore.DemoBeanPostProcessor1">
+    </bean>
+
+    <bean class="org.gontuseries.springcore.DemoBeanPostProcessor2">
+    </bean>
+
+  </beans>
+#+END_SRC
+
+print out information below:
+
+#+BEGIN_EXAMPLE
+DBP1: processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: restaurantBean
+DBP2: processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: restaurantBean
+Restaurant is going to be init
+DBP1: processing bean instance after initialization(i.e just after init life cycle bean) of: restaurantBean
+DBP2: processing bean instance after initialization(i.e just after init life cycle bean) of: restaurantBean
+welcome dear customer!!! This is lifecycle demo
+Restaurant is going to be destroy
+#+END_EXAMPLE

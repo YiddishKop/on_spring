@@ -1,0 +1,209 @@
+#+TITLE: lec-07: Dependency Injection using constructor way
+
+
+Simple steps:
+1. Create a Restaurant class.
+2. Create a Tea class.
+3. Create a IHotDrink interface
+
+
+* Restaurant.java
+#+NAME: version1: Restaurant.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+public class Restaurant {
+	public void greetCustomer() {
+		System.out.println("welcome to our restaurant");
+	}
+}
+  #+END_SRC
+
+#+NAME: version2: Restaurant.java
+#+BEGIN_SRC java
+    package org.gontuseries.springcore;
+
+    public class Restaurant {
+
+        // add this property
+        String welcomeNote;
+
+        // add this setter of property 'welcomeNote'
+        public void setWelcomeNote(String welcomeNote){
+            this.welcomeNote = welcomeNote;
+        }
+
+        // modify this to use property 'welcomeNote' for debug.
+        public void greetCustomer() {
+            System.out.println(welcomeNote);
+        }
+    }
+  #+END_SRC
+
+#+NAME: version3: Restaurant.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+public class Restaurant {
+    IHotDrink hotDrink;
+    Restaurant(IHotDrink hotDrink){
+        this.hotDrink = hotDrink;
+    }
+    /**
+     * tips: 我对外提供的功能,不能出现具体的被我包含但我希望将其隐藏的对象名. 这
+     就是为什么要把[被我包含进来的方法进行再次包装]的原因 --- 对外隐藏实现细节
+     --- '我到底是谁', 调用者只需要知道 '如何使用我' 即可. 我是代理 --- 我对外提
+     供的方法与[被代理人提供的方法名完全一致, 但隐藏被代理人名字]. 置于我究竟是
+     谁, 需要到运行时赋值给我具体的对象, 才能知道.
+     keywords: spring, DI, 代理, 晚绑定, 运行时
+     */
+    public void prepareHotDrink(){
+        hotDrink.prepareHotDrink();
+    }
+}
+#+END_SRC
+
+* Tea.java
+
+ #+NAME: version3: Tea.java
+#+BEGIN_SRC java
+   package org.gontuseries.springcore;
+   public class Tea implements IHotDrink{
+       @Override
+       public void prepareHotDrink() {
+           System.out.println("Dear Customer, we are preparing Tea for you!!!");
+       }
+   }
+#+END_SRC
+
+
+* IHotDrink.java
+
+#+NAME: IHotDrink.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+public interface IHotDrink {
+	public void prepareHotDrink();
+}
+#+END_SRC
+
+* SpringConfig.xml
+
+#+NAME: version1: SpringConfig.xml
+#+BEGIN_SRC xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  <bean id="restaruantBean" class="org.gontuseries.springcore.Restaruant">
+  </bean>
+</beans>
+#+END_SRC
+
+#+NAME: version2: SpringConfig.xml --- add 'property' tag
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+
+      <!-- add this property, declare its name and value. -->
+      <property name="welcomeNote" value="Welcome to our Restaurant!!!"/>
+    </bean>
+  </beans>
+#+END_SRC
+
+#+NAME: version3: SpringConfig.xml --- add 'constructor-ref' tag
+#+BEGIN_SRC xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  <!-- 注册 Restaurant 类和其构造方法的参数,也就是被代理对象的 id -->
+  <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+    <constructor-arg ref="teaBean" />
+  </bean>
+  <!-- 注册 Tea 类,也就是被代理人 -->
+  <bean id ="teaBean" class="org.gontuseries.springcore.Tea"></bean>
+
+</beans>
+#+END_SRC
+
+* TestSpringProject.java
+#+NAME: version1: TestSpringProject.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestSpringProject {
+
+    public static void main(String[] args){
+
+        /**
+         * This statement is going to find and load SpringConfig.xml file
+         from our project into the application context;
+         */
+        ApplicationContext context =
+            new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+        Restaruant restaruantObj = (Restaruant) context.getBean("restaruantBean");
+
+        restaruantObj.greetCustomer();
+
+    }
+}
+#+END_SRC
+
+#+NAME: version2: TestSpringProject.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestSpringProject {
+
+    public static void main(String[] args){
+
+        /**
+         * This statement is going to find and load SpringConfig.xml file
+         from our project into the application context;
+         */
+        ApplicationContext context =
+            new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+        Restaruant restaruantObj = (Restaruant) context.getBean("restaruantBean");
+
+        restaruantObj.greetCustomer();
+
+    }
+}
+#+END_SRC
+
+#+NAME: version3: TestSpringProject.java
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestSpringProject {
+    public static void main(String[] args){
+        /**
+         * This statement is going to find and load SpringConfig.xml file
+         from our project into the application context;
+         */
+        ApplicationContext context =
+            new ClassPathXmlApplicationContext("SpringConfig.xml");
+        Restaruant restaruantObj = (Restaruant) context.getBean("restaruantBean");
+        restaruantObj.prepareHotDrink();
+    }
+}
+#+END_SRC

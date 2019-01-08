@@ -1,0 +1,51 @@
+#+TITLE: Spring MVC Tutorials 17 - Form Validations 01 ( using JSR 303 349 provided annotations )
+
+The concept of Form Validations.
+
+It is alwasy too annoy to add logic processing code to handle the input
+information format in JSP form. Good news is that Hibernate provide a complete
+library to do this easily. You can download from [[http://hibernate.org/validator/downloads/][here]].
+
+本节课想达到的效果是, 限制表单中 'hobby' 一项的用户输入长度为 2~30 个字符, 不在
+此范围内则提示异常. SpringMVC 提供的标准做法是, 定义一个 PropertyEditor 来截获这
+个名称 'hobby' 提交的 value 值的长度是多少. 然后通过 BindingResult 参数来把异常
+结果返回给某个页面 View. 这种做法太繁琐, 幸运的是 SpringMVC 还提供了两个标准:
+~JSR303~ and ~JSR349~ 任何满足这两个标准的库, 都可以把上面的异常处理逻辑封装成
+Annoation 供程序员使用, Hibernate-validator 就是这样的库.
+
+
+ *校验表单输入长度*
+
+1. 类定义中在需要被校验的属性上加入 ~@Size(min=1, max=5)~ 标签;
+2. 在 Controller 中相关的 request handler method 参数中加入 ~@Valid~ 标签.
+
+这两个标签都必须要有, 否则无法校验 request parameter 长度.
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+  public ModelAndView submitAdmissionForm(
+      // +------------- here
+      // v
+      @Valid @ModelAttribute("student1") Student student1,
+      BindingResult result
+      ){
+      if (result.hasErrors()) {
+          ModelAndView model1 = new ModelAndView("AdmissionForm");
+          return model1;
+      }
+      ModelAndView model1 = new ModelAndView("AdmissionSuccess");
+      return model1;
+  }
+#+END_SRC
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+  public class Student {
+      private String studentName;
+      // here
+      @Size(min=2, max=30)
+      private String studentHobby;
+      private Long studentMobile;
+      private Date StudentDOB;
+#+END_SRC

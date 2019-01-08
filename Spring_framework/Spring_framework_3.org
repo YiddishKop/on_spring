@@ -1,0 +1,138 @@
+#+TITLE: lec-03: Understanding Dependency Injection-2(concept explaination)
+
+two parts:
+
+1. [X] Understanding Dependency Injection-1: problems if you do not use it.
+2. [X] Understanding Dependency Injection-2: what is spring's DI(concept) and how to use it.
+
+
+Injection principle, will solve the problem, the Restaurant class will use the
+Tea class without creating Tea object inside it.
+
+Spring framework use dependency injection principle across the globe.
+
+meaning of dependency injection is to inject dependency of an object from
+outside.
+
+
+A real life Aanlogy.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-22 22:13:37
+[[file:screenshot_2018-11-22_22-13-37.png]]
+
+The coffee expert will first gather all its dependencies and then inject it into
+the coffee object before giving it to you. All you want is a cup of coffee, so
+why bother about its dependecies.
+
+
+#+NAME:  Restaruant without inject
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  class Restaruant{
+      Tea tea = new Tea(); // NOT DO THIS!!!
+      public void prepareHotDrink(){
+          tea.prepareTea();
+      }
+  }
+#+END_SRC
+
+#+NAME:  Tea
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  class Tea{
+      public void prepareTea(){
+          // code to prepare tea
+      }
+  }
+#+END_SRC
+
+*Outsource(外包)* the task of handling all *dependencies* of an object to an
+*expert* (some 3rd party program).
+
+This program written by you or pre-existing ones like *Spring Framework* (coffee
+expert) which dose the job of creating and providing the *dependencies* (coffee
+beans, pot, sugar etc) of the requested object at *runtime*.
+
+The idea is : when the *Restaruant* object is created, the *tea* object will be
+*created* and provided to it *from outside* by some third party program.
+
+1. In order to do this, you need an *interface*.
+2. The interface will *bind* the Restaruant and Tea class.
+3. Restaruant *use* the expert interface instead of Tea object.
+4. The Tea class *implement* the expert interface.
+5. Ctor or setter, 用[ *从外部传入实现了expert接口的coffee对象* ] 作为构造函数参
+   数生成 [ *注入特定coffee对象的* ] Restaurant对象.
+
+
+#+NAME:  iterface IHotDrink
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  interface IHotDrink{
+      public void prepareTea();
+  }
+#+END_SRC
+
+#+NAME:  Restaruant with inject
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  class Restaruant{
+      IHotDrink hotDrink; // use interface instead of Tea obj.
+
+      Restaruant(IHotDrink hotDrink){
+          hotDrink = this.hotDrink;
+      } // Ctor or setter, 用[从外部传入的实现了这个expert接口的coffee对象作为参数]生成Restaurant对象.
+
+      public void prepareHotDrink{
+          hotDrink.prepareTea();
+      }
+  }
+#+END_SRC
+
+#+NAME:  Tea
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  class Tea implements IHotDrink{
+      public void prepareTea(){
+          // code to prepare tea
+      }
+  }
+#+END_SRC
+
+
+#+BEGIN_EXAMPLE
+   Restaruant                           Tea
++--------------+                 +---------------+
+|              | --------------- |               |
+|   new Tea(); | --------------- |               |
++--------------+                 +---------------+
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+   Restaruant                                     <Expert>
++---------------------------+                 +---------------+
+|Expert expert;             | --------------- |               |
+|Restaruant(Expert expert){ |                 |               |
+| this.expert = _______;    |                 |               |
+|}                 ^        |                 |               |
++---------------------------+                 +---------------+
+                   .                                   ^
+                   .                                   | implement
+                   .                                   |
+                   .                           +---------------+
+                   ..........................  |               | Tea
+      子类对象传递父类接口                     |               |
+                                               +---------------+
+
+#+END_EXAMPLE
+
+Of course, you can change the Ctor of Restaruant with the setter method of
+Restaruant;
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-22 22:59:53
+[[file:screenshot_2018-11-22_22-59-53.png]]
+
+
+If you using Spring Framework, this instruction you provide in a *configuration*
+*file*---provided by Spring.
+
+Spring Framework provides two ways of dependency injection:
+1. using constructor method.
+2. using setter method.

@@ -1,0 +1,130 @@
+#+TITLE: lec-14: A BeanPostProcessor concept in Spring
+
+A BeanPostProcessor is a class which allow you to modify a bean's instance to
+perform any tasks once it's created by Spring Container(simply speaking, Spring
+framework)
+
+Simply speaking, you write certain code in the BeanPostProcessor, Spring execute
+this code after construction and initialization of every Bean object declared in
+SpringConfig.xml file. Assume you declare 10 Bean definition in configuratin
+file, then this piece of code of BeanPostProcessor will be executed 10 times.
+
+
+#+BEGIN_EXAMPLE
+Build context obj meanwhile build Bean obj if lazy-init=false, build only one Bean obj if scope=singleton
+
+Bean obj build by context.getBean() if lazy-init=true
+
+   ------ BeanPostProcessor.postProcessBeforeInitialization ---- by every bean
+
+Bean obj init
+
+   ------ init()
+
+   ------ BeanPostProcessor.postProcessAfterInitialization ---- by every bean
+
+   ------ destroy()
+
+Bean obj destroy
+
+(AbstractApplicationContext)context.registerShutDownHook()
+
+Destroy context
+#+END_EXAMPLE
+
+
+* 源码
+
+#+NAME: Restaurant
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+public class Restaurant {
+	public void greetCustomer() {
+		System.out.println("welcome dear customer!!! This is lifecycle demo");
+	}
+	public void init() {
+		System.out.println("Restaurant is going to be init");
+	}
+	public void destroy() {
+		System.out.println("Restaurant is going to be destroy");
+	}
+}
+#+END_SRC
+
+#+NAME: DemoBeanPostProcessor
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+
+public class DemoBeanPostProcessor implements BeanPostProcessor{
+	// just record initialization for this Bean object
+    // arg0 is the actuall Bean object, arg1 is the Bean name
+    // by this method you can modify Bean object.
+    @Override
+    public Object postProcessAfterInitialization(Object arg0, String arg1) throws BeansException{
+        System.out.println("processing bean instance after initialization(i.e just after init life cycle bean) of: " + arg1);
+        return arg0;
+    }
+
+    // will be executed before Bean object is initialized completely
+    @Override
+    public Object postProcessBeforeInitialization(Object arg0, String arg1) throws BeansException{
+        System.out.println("processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: " + arg1);
+        return arg0;
+    }
+
+}
+#+END_SRC
+arg0 is the actuall Bean object, arg1 is the Bean name
+
+
+#+NAME: TestSpringProjectBeanPostProcessor
+#+BEGIN_SRC java
+package org.gontuseries.springcore;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class TestProjectProjectBeanPostProcessor {
+
+	public static void main(String[] args) {
+		ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+		((AbstractApplicationContext)context).registerShutdownHook();
+
+		Restaurant restaurantObj = (Restaurant)context.getBean("restaurantBean");
+		restaurantObj.greetCustomer();
+	}
+}
+
+#+END_SRC
+
+#+NAME: SpringConfig.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" init-method="init" destroy-method="destroy">
+    </bean>
+
+    <!-- HERE, you should declare the bean processor -->
+    <bean class="org.gontuseries.springcore.DemoBeanPostProcessor">
+    </bean>
+
+  </beans>
+#+END_SRC
+
+This will print out the following information in the console:
+
+#+BEGIN_EXAMPLE
+processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: restaurantBean
+Restaurant is going to be init
+processing bean instance after initialization(i.e just after init life cycle bean) of: restaurantBean
+welcome dear customer!!! This is lifecycle demo
+Restaurant is going to be destroy
+#+END_EXAMPLE

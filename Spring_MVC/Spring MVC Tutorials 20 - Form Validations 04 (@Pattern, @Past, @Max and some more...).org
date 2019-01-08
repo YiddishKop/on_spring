@@ -1,0 +1,52 @@
+#+TITLE: Spring MVC Tutorials 20 - Form Validations 04 (@Pattern, @Past, @Max and some more...)
+
+Introduce more important Annotations.
+
+
+* @Pattern(regex="___")
+
+ *How to give constraint to "Student's Name:" not have digit.*
+
+~@Pattern(regex="[^0-9]*")~
+
+#+BEGIN_SRC java
+  @Pattern(regexp="[^0-9]*")
+  private String studentName;
+#+END_SRC
+
+勿忘如下两个操作:
+1. 与 @Size 相同的,你仍然必须要给 request handler method parameter 声明 @Valid.
+2. 仍然可以在 .properties 文件中声明定制化的错误信息, ~Pattern.studentName = "___"~
+
+
+* @Past
+
+*The studentDOB should not be after the current date.*
+
+~@Past~
+
+这个标记告诉 SpringMVC 其声明的类属性的绑定值(表单输入的值)不能超过当前时间(当前
+年月日).一般用于生日的校验.
+
+#+BEGIN_SRC java
+    @Past
+    private Date StudentDOB;
+#+END_SRC
+
+* @Max
+
+*The studentMobile should not larger than 2222(maybe in india)*
+
+~@Max(2222)~
+
+一般用在类属性为数值类型时, 限制传过来的数值大小.
+
+#+BEGIN_SRC java
+    @Max(2222)
+	private Long studentMobile;
+#+END_SRC
+
+* Other Annotations
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-02 22:28:42
+[[file:Other Annotations/screenshot_2018-12-02_22-28-42.png]]

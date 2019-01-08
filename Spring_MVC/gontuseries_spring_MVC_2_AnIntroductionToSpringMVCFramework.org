@@ -1,0 +1,50 @@
+# -*- org-export-babel-evaluate: nil -*-
+#+PROPERTY: header-args :eval never-export
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/site.css" >
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:t html-preamble:t
+#+OPTIONS: H:3 num:nil ^:nil _:nil tags:not-in-toc
+#+TITLE: gontuseries Spring MVC Tutorials lec-2: An Introduction to Spring MVC framework
+#+AUTHOR: yiddishkop
+#+EMAIL: yiddishkop@163.com
+
+Why spring framework is the first choice for developers who want to develop a
+web application! Because it support the most powerful feature: inversion of
+control or the dependency injection.
+
+
+Spring 中如何 Bean obj 调用方法的步骤:
+#+BEGIN_EXAMPLE
+XML --> ClassPathXmlApplicationContext --> context --> getBean --> Bean obj --> call method
+#+END_EXAMPLE
+
+
+Spring 中的 DI 示意图
+#+BEGIN_EXAMPLE
+         A                                    I
++--------------------+               +--------------+
+|                    |               |              |
+| declare interface----------------- +--------------+
+|                    |                        |
+|    setter          |                    B   | implement
+|                    |               +--------------+
+|    use             |               |              |
++--------------------+               +--------------+
+
+B b = new B();
+A a = new A();
+A.set(B);
+A.use();
+#+END_EXAMPLE
+
+
+The framework and data flow of Spring MVC Framework:
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-25 20:36:16
+[[file:screenshot_2018-11-25_20-36-16.png]]
+
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-25 20:35:17
+[[file:screenshot_2018-11-25_20-35-17.png]]

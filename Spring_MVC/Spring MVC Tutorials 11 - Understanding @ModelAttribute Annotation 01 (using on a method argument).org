@@ -1,0 +1,230 @@
+#+TITLE: Spring MVC Tutorials 11 - Understanding @ModelAttribute Annotation 01 (using on a method argument)
+
+把 @ModelAttribute 用在 *参数* 之上
+
+#+BEGIN_EXAMPLE
+perform request on:                           the Request handller                            定义管理类
+
+   JSP                <------------------>   @ModelAttribute parameter   <---------------->  attributes
+    |                                                                                             |
+    ^                                                                                             ^
+    +---------------------------------------------------------------------------------------------+
+                               name of input and name attributes must be identity.
+#+END_EXAMPLE
+
+
+为什么在 request handler method 参数中使用 @ModelAttribute 而不是 @RequestParam.
+
+1. 因为他会根据相关类定义的名字与request JSP请求参数的名字自动绑定对应关系.
+2. 因为我们可以根据 @ModelAttribute("~objName~") 提供的名字, 直接在 response JSP
+   中使用, ~@{objName.name}~
+
+
+一句话概括就是, *数据传进来* 的时候可以实现自动 *绑定* 类属性, *数据传出去* 的时
+候可以直接被JSP以对象 *调用* 的形式使用.
+
+#+BEGIN_EXAMPLE
+               自动绑定
+request JSP -------------------- 类定义;
+
+               直接使用
+reponse JSP -------------------- request handler;
+#+END_EXAMPLE
+
+
+Some concept to understand the ~@ModelAttribute~
+
+* 请求处理函数返回对象并在JSP中直接使用
+我们可以构建一个对象, 用来把多个请求参数封装起来.
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+  package com.gontuseries.studentadmissioncontroller;
+  import java.util.Map;
+  import org.springframework.stereotype.Controller;
+  import org.springframework.web.bind.annotation.RequestMapping;
+  import org.springframework.web.bind.annotation.RequestMethod;
+  import org.springframework.web.bind.annotation.RequestParam;
+  import org.springframework.web.servlet.ModelAndView;
+
+  @Controller
+  public class StudentAdmissionController {
+      @RequestMapping(value="/admissionForm.html", method=RequestMethod.GET)
+      public ModelAndView getAdmissionForm(){
+          ModelAndView model = new ModelAndView("AdmissionForm");
+          return model;
+      }
+      @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+      public ModelAndView submitAdmissionForm(
+          @RequestParam("studentName") String name,
+          @RequestParam("studentHobby") String hobby
+          ){
+          // modify this:
+          // ModelAndView model = new ModelAndView("AdmissionSuccess");
+          // model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+          // return model;
+
+          // to this:
+          Student student1 = new Student();
+          student1.setStudentName(name);
+          student1.setStudentHobby(hobby);
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          model.addObject("headerMessage", "Gontu College of Engineer, India");
+          model.addObject("student1", student1);
+          return model;
+      }
+  }
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+
+                        +--->----------------+    +--------------+
+                        |                    |    ^              |
+         stu_name  -----+                    v    |              +----------> ${obj.stu_name}
+         stu_hobby -----+           request handler parameter    +----------> ${obj.stu_hobby}
+POST -----------------> Controller --------------------------------------> response JSP
+                                    with name and hobby
+#+END_EXAMPLE
+
+~<td>${student1.studentHobby}</td>~ 表明我们可以直接在 JSP 页面中使用 ~对象名.属
+性名~ 来获取对象的属性值. 这个 ~对象名~ 是传递给 FronterController 的 model 中包
+含的, 在 controller 类中通过 ~model.addObject("对象名", 对象索引)~ 声明的 ~对象
+名~.
+
+#+NAME: AdmissionSuccess.jsp (Response JSP 提交表单后展示页面)
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1>${headerMessage} </h1>
+    <h3>Congratulations!! process you form successfully!</h3>
+    <h2>Details submitted by you: </h2>
+    <table>
+      <tr>
+        <td>Student name</td>
+        <td>${student1.studentName}</td>
+      </tr>
+      <tr>
+        <td>Student Hobby</td>
+        <td>${student1.studentHobby}</td>
+      </tr>
+    </table>
+  </body>
+</html>
+#+END_SRC
+
+两个核心问题:
+- request 参数如何绑定进用户自定义的对象中.
+- 用户自定义的对象如何放进 model 中进行传递.
+
+#+BEGIN_EXAMPLE
+- request 参数如何绑定进用户自定义的对象中.
+        Student student1 = new Student();
+        student1.setStudentName(name);
+        student1.setStudentHobby(hobby);
+
+- 用户自定义的对象如何放进 model 中进行传递.
+        ModelAndView model = new ModelAndView("AdmissionSuccess");
+        model.addObject("headerMessage", "Gontu College of Engineer, India");
+        model.addObject("student1", student1);
+        return model;
+#+END_EXAMPLE
+
+SpringMVC 针对这种对象传递, 封装request参数, 解封装request参数的任务,提供了
+annotation: ~@ModelAttribute~.
+
+同时 @ModelAttribute 用在参数中时, 他其实 pack a lot of code.
+#+BEGIN_SRC java
+          Student student1 = new Student();
+          student1.setStudentName(name);
+          student1.setStudentHobby(hobby);
+          ModelAndView model = new ModelAndView("AdmissionSuccess");
+          model.addObject("headerMessage", "Gontu College of Engineer, India");
+          model.addObject("student1", student1);
+          return model;
+#+END_SRC
+
+如果把这段代码加上异常处理, 那么我们只要一个 @ModelAttribute annotation 就可以完
+全代替.
+
+#+BEGIN_QUOTE
+@ModelAttribute = 函数接受的数据全部存入 model + 异常处理
+#+END_QUOTE
+
+
+更进一步,我们完全可以直接声明这样的一个参数, 通过 SpringMVC 的 @ModelAttribute
+实现自动绑定对应名称的请求参数.
+#+NAME: ModelAnnotation using in parameter list to replace the RequestParam
+#+BEGIN_SRC java
+  @RequestMapping(value="/submitAdmissionForm.html", method=RequestMethod.POST)
+  public ModelAndView submitAdmissionForm(
+      // (1)(2)
+      // @RequestParam("studentName") String name,
+      // @RequestParam("studentHobby") String hobby
+
+      // (3)
+      @ModelAttribute("student1") Student student1
+      ){
+      // (1)
+      // ModelAndView model = new ModelAndView("AdmissionSuccess");
+      // model.addObject("msg", "details submitted by you:: Name: "+name+", Hobby: " + hobby);
+      // return model;
+
+      // (2)
+      // Student student1 = new Student();
+      // student1.setStudentName(name);
+      // student1.setStudentHobby(hobby);
+      // ModelAndView model = new ModelAndView("AdmissionSuccess");
+      // model.addObject("headerMessage", "Gontu College of Engineer, India");
+      // model.addObject("student1", student1);
+
+      // (3)
+      // 默认会把 Student 对象放入 model 中, 不需要显式的使用 addObject() method
+      ModelAndView model = new ModelAndView("AdmissionSuccess");
+      model.addObject("headerMessage", "Gontu College of Engineer, India");
+
+      return model;
+  }
+#+END_SRC
+
+
+* 通过'名称'实现自动绑定
+
+What our expectation about the ~@ModelAttribute~, is very clear: we want
+SpringMVC to extract *all request parameters* and then *bind* them with the
+*corresponding properties* of student object. 但是如何能保证这种请求参数和对象属
+性之间的 *准确的一一对应* 呢 --- *请求参数名* 与 *对象属性名* 保持一致. 也就是说
+想使用 ~@ModelAttribute~ 传输数据给 FronterController 必须新建对应的类, 比如这里
+的 ~Student~.
+
+
+#+NAME: AdmissionForm.jsp (Request JSP 填写表单信息页面)
+#+BEGIN_SRC html
+<html>
+  <body>
+    <h1> STUDENT ADMISSION FORM FOR ENGINEERING COURSES </h1>
+    <form method="post" action="/FirstSpringMVCProject/submitAdmissionForm.html">
+      <p>
+        Student's Name: <input type="text" name="studentName" /> <!-- HERE -->
+      </p>
+      <p>
+        Student's Hobby: <input type="text" name="studentHobby" /> <!-- HERE -->
+      </p>
+      <input type="submit" name="Submit this form, by clicking here"/>
+    </form>
+  </body>
+</html>
+#+END_SRC
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+
+public class Student {
+	private String studentName; // <- HERE
+	private String studentHobby;// <- HERE
+
+    public String getStudentName(){return studentName;}
+    public void setStudentName(String studentName){this.studentName = studentName;}
+    public String getStudentHobby(){return studentHobby;}
+    public void setStudentHobby(String studentHobby){this.studentHobby = studentHobby;}
+}
+#+END_SRC

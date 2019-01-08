@@ -1,0 +1,81 @@
+#+TITLE: Spring MVC Tutorials 18 - Form Validation 02 (customizing error messages using Spring MessageSource)
+
+
+如何定义自己的 error message.
+
+* 进一步
+在刚才的 ~@Size~ 标签中, 加上一个 ~message = "xxxx"~ 字段来定义.
+#+BEGIN_SRC java
+    @Size(min=2, max=30, message="Please enter a value forr studentHobby field between 2 and 30 characters.")
+	private String studentHobby;
+#+END_SRC
+
+* 再进一步
+但是这里还一个缺点, 就是我们把 '2' 和 '30' 写死在了 message 中, SpringMVC 提供了
+一种方法来直接引用 'min' 和 'max' 中的值: ~{min}~ ~{max}~
+
+#+BEGIN_SRC java
+  @Size(min=2, max=30, message="Please enter a value forr studentHobby field between {min} and {max} characters.")
+  private String studentHobby;
+#+END_SRC
+
+* 再再进一步
+但是这里还一个缺点, 就是我们把这么长的tips写在了源码中, 当我们想给与这个 tips 统
+一的格式时, 一行行的从源码中找是非常费力的.于是 Spring 提供了一种 Spring message
+的处理 tips 的方式, 通过统一的独立的 ~properties~ 文件来管理所有的 tips.
+
+1. *create a 'studentmessages.properties' file under 'WEB-INF' directory*
+2. *include this file in 'spring-dispatcher-servlet' in the form of bean node*
+
+
+#+NAME: Student.java
+#+BEGIN_SRC java
+    @Size(min=2, max=30) // 这里就不需要 message 了.
+	private String studentHobby;
+#+END_SRC
+
+#+NAME: /WEB-INF/spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+  <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+    <property name="basename" value="/WEB-INF/studentmessages" />
+  </bean>
+#+END_SRC
+
+[注意] *这里 properties 文件声明的时候不需要写文件扩展名, 也就是 +.properties+.*
+
+#+NAME: /WEB-INF/studentmessages.properties
+#+BEGIN_SRC txt
+Size.student1.studentHobby = please enter a value for studentHobby field between 2 and 30 characters
+#+END_SRC
+
+
+一旦在 ~spring-dispatcher-servlet~ 也就是 FrontController 中注册了这个
+~ReloadableResourceBundleMessageSource~ 类型的 bean, 那么每次在传入 request
+parameter 给对应类属性进行 data binding 的时候, 如果对应类的属性上带有
+~@Size(min=2,max=5)~ 的标签, 且 *属性值不合要求*, 就会去
+~spring-dispatcher-servlet~ 下面找相关的 ~messageSource~, 一旦找到就把他添加到
+(出错信息)model 中并返回给 FrontController 进而返回给原网页并直接展示在原网页中,
+如果找不到 messageSource 则返回默认的 (出错信息)model.
+
+* SpringMVC 如何找到 properties 文件中的键值对
+
+Spring MVC would serach for a key matching with this key pattern:
+
+~[Validation Annotation Name] . [Object Reference Name] . [Field Name]~
+
+Spring MVC 在遇到违反标签约定规则的时候去 studentmessages.properties 中寻找匹配
+值的方式为:
+
+1. 违反了哪个标签   : Size
+2. 违反者对象的名字 : student1
+3. 对象的属性名字   : studentHobby
+
+~Size.student1.studentHobby~
+
+* 再n步
+按照这种模式去 .properties 文件中找 message 用来返回. 如果没找到, 则按照如下的方
+式继续寻找(图中2,3,4).
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-02 20:25:14
+[[file:screenshot_2018-12-02_20-25-14.png]]

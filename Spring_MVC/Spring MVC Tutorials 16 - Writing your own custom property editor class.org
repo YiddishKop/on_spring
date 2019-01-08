@@ -1,0 +1,56 @@
+#+TITLE: Spring MVC Tutorials 16 - Writing your own custom property editor class
+
+Writing your own property editor class.
+
+这里我们想实现的是: 我们希望用户输入名字的时候带上性别称呼 *Mr* or *Ms*, 如果没
+带上, 则默认是先生 Mr.
+
+SpringMVC 中有一些预先定义好的 PropertyEditor: [[https://docs.spring.io/spring/docs/5.1.3.RELEASE/spring-framework-reference/core.html#beans-beans-conversion][built-in PropertyEditor]], 如果这里
+没有一个解析字符串的方式符合你的要求,那么你可以定义自己的 PropertyEditor 类.
+
+如下我们定义一个 PropertyEditor, 他把请求参数中名为 "studentName" 的值与 Student
+类的 name 属性进行某种自定义的映射, 映射结果类型为 String.
+
+#+BEGIN_EXAMPLE
+stduentName --------------> if contain "Mr." or "Ms." ---------> 原封不动赋值给 student.name
+                   |
+                   +------> if not contain "Mr." or "Ms." -----> 字符串首加上 "Mr." 再赋值给 student.name
+#+END_EXAMPLE
+
+
+#+NAME: StudentNameEditor.java
+#+BEGIN_SRC java
+package com.gontuseries.studentadmissioncontroller;
+import java.beans.PropertyEditorSupport;
+public class StudentNameEditor extends PropertyEditorSupport {
+    /*
+      when you will submit the admission form --->
+      SpringMVC will run setAsText function of this class --->
+      Before performing data binding task forr studentName
+      property of student object
+    */
+    @Override
+    public void setAsText(String studentName) throws IllegalArgumentException{
+        if(studentName.contains("Mr.") || studentName.contains("Ms.")){
+            setValue(studentName);
+        } else {
+            studentName = "Ms." + studentName;
+            setValue(studentName); // what every value you will provide to setValue --- Spring
+                                   // MVC will use the same value to perform data binding for
+                                   // studentName property
+        }
+    }
+}
+#+END_SRC
+
+
+#+NAME: StudentAdmissionController.java
+#+BEGIN_SRC java
+    @InitBinder
+    public void initBinder(WebDataBinder binder){
+        binder.setDisallowedFields(new String[] {"studentMobile"});
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy****MM****dd");
+        binder.registerCustomEditor(Date.class, "studentDOB", new CustomDateEditor(dateFormat, false));
+        binder.registerCustomEditor(String.class, "studentName", new StudentNameEditor());
+    }
+#+END_SRC

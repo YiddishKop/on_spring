@@ -1,0 +1,60 @@
+#+TITLE: lec-02: Understanding Dependency Injection-1(concept)
+
+two parts:
+
+1. [X] Understanding Dependency Injection-1: problems if you do not use it.
+2. [ ] Understanding Dependency Injection-2: what is spring's DI(concept) and how to use it.
+
+
+#+NAME:  Restaruant without inject
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  class Restaruant{
+      Tea tea = new Tea(); // NOT DO THIS!!!
+      public void prepareHotDrink(){
+          tea.prepareTea();
+      }
+  }
+#+END_SRC
+
+#+NAME:  Tea
+#+BEGIN_SRC java :tangle yes :noweb yes :exports code :results output drawer
+  class Tea{
+      public void prepareTea(){
+          // code to prepare tea
+      }
+  }
+#+END_SRC
+
+Design of class Restaruant will prepare tea using tea object but this will make
+future maintenance quite problematic for you. That's only because you are
+creating or instentiating tea *object* *inside* a Restaruant *class* using a
+~new~ operator, 3 key words: *object, class, new*.
+
+Restaruant class has a direct dependency on the tea class.
+
+This is so much tightly coupled with tea class that it will attract a lot of
+troubles to you in future maintenance of the project.
+
+The 3 main problems:
+1. *Replacing ~Tea~ class with another class say ~ExpressTea~ class*.
+
+   you have to modify all classes in the project which have a direct or strong
+   dependency on this class.
+
+2. *Modifying the ~Tea~ class say Parameterising its constructor*
+
+3. *You can not test ~Restaruant~ class without including ~Tea~ class*
+
+   you can not test your class without including its dependencies. In another
+   word, using Junit is a big pain.
+
+What's now our purpose! *You will not mention Tea object inside the Restaruant
+ class and still the Restaruant class can use Tea object*.
+
+#+NAME: Dependency Injection
+#+BEGIN_QUOTE
+Never create an object inside another class using a new operator.
+#+END_QUOTE
+
+I will create all objects *along with the dependencies* in your application and
+you just use them.

@@ -1,0 +1,210 @@
+#+TITLE: lec-12: Bean Life Cycle
+
+* 'After' and 'Before'
+
+In short, Spring instantiates and destroy Bean for us in our application
+*automatically*. So we do not need to bother about how it does so. But sometime
+you may wish to perform certain actions *immediately after* instantiates any
+bean and *just before* a bean destruction by spring framework, that's the
+content of this lecture.
+
+
+*two extra methods* in your ~bean class~, *convey* spring by ~SpringConfig.xml~
+which one to call after its inialization and which one to call before its
+destruction.
+1. one method will get executed immediately after bean is instantiated.
+2. one method will get executed just before bean is about to destructed.
+
+* close context manually
+
+#+NAME: close context manually
+#+BEGIN_QUOTE
+Until now, we ONLY create context, but context is very like the "session" and
+"filestream", you should open and also close it. When we close the context,
+Spring will destroy all beans present in it before
+#+END_QUOTE
+
+
+~((AbstractApplicationContext)context).registerShutdownHook();~
+
+~AbstractApplicationContext~ is one of the classes which has implemented
+~ApplicationContext~ and it has method called ~registerShutdownHook~, if you
+call it in spring, spring will destroy all beans in main method.
+
+* Let Spring know the ~init~ and ~destroy~
+
+*Individual setting*
+
+We should provide attribute ~init-method=""~ and ~destroy-method=""~ in ~<Bean>~
+node in ~SpringConfig.xml~, by this way we convey springframework what should do
+*after loading* and *before detroying*
+
+#+NAME: inidividual settting: SpringConfig.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+         >
+
+         <!-- scope property -->
+         <bean id="restaurantBean"
+               class="org.gontuseries.springcore.Restaurant"
+               init-method="init"
+               destroy-method="destroy"
+         >
+         </bean>
+
+  </beans>
+#+END_SRC
+
+
+#+BEGIN_EXAMPLE
+         <bean id="restaurantBean"
+               class="org.gontuseries.springcore.Restaurant"
+               init-method="init"
+                            ----
+               destroy-method="destroy"
+                               -------
+         >
+         </bean>
+#+END_EXAMPLE
+
+must have the same name with the method declared in ~Restaurant~ class
+
+#+BEGIN_EXAMPLE
+      public void init(){
+                  ----
+          System.out.println("Restaurant Bean is going through init.");
+      }
+
+      public void destroy(){
+                  -------
+          System.out.println("Bean will destroy now.");
+      }
+
+#+END_EXAMPLE
+
+
+*gobal setting*
+
+But if *too many beans having initialization and destroy methods* with the
+*same* name you dont need to declare init method and destroy method on each
+individual bean.
+
+Spring provide the default to do this on the *top* of ~SpringConfig.xml~ file,
+like
+
+#+BEGIN_SRC xml
+  <beans
+      xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+      default-init-method="init"
+      default-destroy-method="destroy"
+                          >
+
+      <!-- scope property -->
+      <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant" init-method="init" destroy-method="destroy">
+      </bean>
+  </beans>
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+default-init-method="init"
+default-destroy-method="destroy"
+#+END_EXAMPLE
+
+These two line of code will specify ~init-method~ and ~destroy-method~ of *all
+Beans* declared in this ~SpringConfig.xml~ file.
+
+* 源码
+
+#+NAME: TestSpringProjectBeanLifeCycle.java
+#+BEGIN_SRC java
+  package org.gontuseries.springcore;
+  import org.springframework.context.ApplicationContext;
+  import org.springframework.context.support.AbstractApplicationContext;
+  import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+  public class TestSpringProject {
+
+      public static void main(String[] args) {
+
+          ApplicationContext context = new ClassPathXmlApplicationContext("SpringConfig.xml");
+
+          // HERE we close the context manually
+          ((AbstractApplicationContext)context).registerShutdownHook();
+
+          Restaurant restaurantObj = (Restaurant)context.getBean("restaurantBean");
+          restaurantObj.greetCustomer();
+      }
+  }
+#+END_SRC
+
+
+
+#+NAME: Restaurant.java
+#+BEGIN_SRC java
+  package org.gontuseries.springcore;
+
+  public class Restaurant {
+
+      public void greetCustomer() {
+          System.out.println("welcome dear customer~~, this is the LifeCycle demo!");
+      }
+
+      /**
+       ,* called after bean is initialized
+       ,*/
+      public void init(){
+          System.out.println("Restaurant Bean is going through init.");
+      }
+
+      /**
+       ,* called before bean will be destroyed
+       ,*/
+      public void destroy(){
+          System.out.println("Bean will destroy now.");
+      }
+  }
+#+END_SRC
+
+
+#+NAME: global settting: SpringConfig.xml
+#+BEGIN_SRC xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+              http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+       default-init-method="init"
+       default-destroy-method="destroy"
+>
+
+  <!-- scope property -->
+  <bean id="restaurantBean" class="org.gontuseries.springcore.Restaurant">
+  </bean>
+</beans>
+#+END_SRC
+
+#+NAME: inidividual settting: SpringConfig.xml
+#+BEGIN_SRC xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+         >
+
+         <!-- scope property -->
+         <bean id="restaurantBean"
+               class="org.gontuseries.springcore.Restaurant"
+               init-method="init"
+               destroy-method="destroy"
+         >
+         </bean>
+
+  </beans>
+#+END_SRC
+
+

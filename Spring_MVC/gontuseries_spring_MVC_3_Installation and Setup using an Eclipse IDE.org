@@ -1,0 +1,58 @@
+# -*- org-export-babel-evaluate: nil -*-
+#+PROPERTY: header-args :eval never-export
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/site.css" >
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:t html-preamble:t
+#+OPTIONS: H:3 num:nil ^:nil _:nil tags:not-in-toc
+#+TITLE: gontuseries Spring MVC Tutorials lec-3: Installation and Setup using an Eclipse IDE
+#+AUTHOR: yiddishkop
+#+EMAIL: yiddishkop@163.com
+
+
+* eclipse settings of Dynamic web project developing
+1. build a project by right click "Project Explorer" and choose "new" , then
+   "other"
+2. choose "web" --> "Dynamic Web Project"
+3. give project name, select the "Add Project to an EAR" in the new window.
+4. "next" "next"
+5. select "Generate web.xml development descript" in new window
+6. while the project created, *copy* ALL jars under the directory
+   "~pring-framework-5.1.2.RELEASE/libs~" to the Eclipse project directory
+   "~WebContent/WEB-INFO/lib~"
+7. do as previous step for ~common-logging jars~
+
+
+How to build Spring Jars Library in Eclipse:
+#+BEGIN_QUOTE
+download the Spring Framwork jars in the following URL:
+
+https://repo.spring.io/release/org/springframework/spring/
+
+
+Spring Framwork need one more jar: common-logging jars, you can download from URL below:
+
+https://commons.apache.org/proper/commons-logging/download_logging.cgi
+
+
+The following Eclipse operation:
+1. build a *Java project*;
+2. right click the project, and choose *properties*;
+3. choose *Java Build path*
+4. Build a customer Library:
+   1. choose *Add Library*;
+   2. choose *User Library*;
+   3. Give it a name;
+   4. select the named Empty Library;
+   5. choose *Add External Jars*
+   6. find the Jars downloaded from the 2 URLs;
+   7. apply and close;
+#+END_QUOTE
+
+
+
+
+* download Apache Tomcat Server
+
+1. Go to website http://tomcat.apahce.org/download-70.cgi and download the
+   relevat Tomcat Apache Zip for your computer.
+
+2. Upzip the contents in your local driver.

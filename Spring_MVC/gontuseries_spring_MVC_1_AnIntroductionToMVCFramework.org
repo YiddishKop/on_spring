@@ -1,0 +1,125 @@
+# -*- org-export-babel-evaluate: nil -*-
+#+PROPERTY: header-args :eval never-export
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/site.css" >
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:t html-preamble:t
+#+OPTIONS: H:3 num:nil ^:nil _:nil tags:not-in-toc
+#+TITLE: gontuseries Spring MVC Tutorials lec-1: An intro to MVC framework
+#+AUTHOR: yiddishkop
+#+EMAIL: yiddishkop@163.com
+
+https://www.youtube.com/watch?v=iCQspqBpOB0
+
+*what is MVC!*
+
+Model View Controller architecture, it's simply a guidline which says how should
+I write code for developing an application having UI.
+
+
+A typical web application developed using a *servlet* technology looks like
+this:
+
+1. here the client *requests* for a web page with application and then based on
+   the *URL* the request is *mapped* to a particular *servlet*
+2. the servlet *processes* the request and *sends back HTML* along with data as
+   a *response* to the *clients browser*.
+
+In the same way, a typical web application developed using a *JSP* technology
+tell us assigning here also the client request for a web page and based on the
+*URL* a particular *JSP* page *prepares* and sends a *response* to the clients
+browser.
+
+#+BEGIN_EXAMPLE
+                                 +----------------------------------+
+                                 |                 +--------------+ |
+                                 |                 |    Servlet   | |
++-----------------+              |                 +--------------+ |
+|client requesting| -------->--  | -------->-----                   |
+|from a browser   |              |                 +--------------+ |
++-----------------+ --------<--  | --------<-----  |    Servlet   | |
+                                 |                 +--------------+ |
+                                 |                                  |
+                                 |                 +--------------+ |
+                                 |                 |    Servlet   | |
+                                 |                 +--------------+ |
+                                 +----------------------------------+
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+                                 +----------------------------------+
+                                 |                 +--------------+ |
+                                 |                 |    JSP page  | |
++-----------------+              |                 +--------------+ |
+|client requesting| -------->--  | -------->-----                   |
+|from a browser   |              |                 +--------------+ |
++-----------------+ --------<--  | --------<-----  |    JSP page  | |
+                                 |                 +--------------+ |
+                                 |                                  |
+                                 |                 +--------------+ |
+                                 |                 |    JSP page  | |
+                                 |                 +--------------+ |
+                                 +----------------------------------+
+#+END_EXAMPLE
+
+But, many IT argue that approach developers follow in both ways is not so good,
+a typical JPS page or servlet which developers write would have two things or
+responsibilities mixed together that is a code which actually renders UI on the
+screen and the code which executes some logic in order to provide data which is
+to be displayed on the UI.
+
+- *Presentation*: UI building code.
+- *Business logic*: some code which is generating data by applying some logic.
+
+a typical Servlet: HTML code embedded into Java code.
+a typical JSP: Java code embedded into HTML code.
+
+
+*MVC*
+
+- Model: represents data.
+- View: represents UI.
+- Controller: manage the application flow, makes a call to some sort of service
+  *producing Model* and then *passes* on the model to View.
+
+
+*Working Procession:*
+
+Request comes to the application ,controller analyzes it and makes a decision to
+call an appropriate business service to get the model. once it receives the
+model from the business service, it passes on this model to the view component
+in order to form the final output or response which can be sent back to the
+client's browser.
+
+In case you're developing a web application using Java, the *model* is typically
+a *Java object* having some _properties along with getters and setters method_,
+and typically the *view* is *HTML code* dispalaying data by retrieving it from
+the model object and these *business services* are also *Java objects* having
+some _business logic to produce a module object_.
+
+
+#+BEGIN_EXAMPLE
++------+
+| view | (html code dispalaying model object)
++------+
+    ^
+    |
+    |   +------+
+    |   | model| (java object)
+    |   +------+
+    |                                 +---------------------------------------+
+    |                                 |Business serveci producing Model(data) |
++---------------+  --------->-------  +---------------------------------------+
+| Controller    |                     +---------------------------------------+
++---------------+  ---------<-------  |Business serveci producing Model(data) |
+                                      +---------------------------------------+
+                                      +---------------------------------------+
+                                      |Business serveci producing Model(data) |
+                                      +---------------------------------------+
+
+                                      consider it a web application having multiple
+                                      servlets(written by you) and running on some
+                                      web server(say an Apache Tomcat)
+#+END_EXAMPLE
+
+[Tips:] Some definitions of MVC says, Model is not just the data it can be any
+logic which is generating data(like this you may find many people speaking
+different definitions of model, view and a controller).

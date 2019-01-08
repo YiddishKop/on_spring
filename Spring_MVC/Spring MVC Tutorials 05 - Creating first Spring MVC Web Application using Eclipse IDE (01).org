@@ -1,0 +1,181 @@
+# -*- org-export-babel-evaluate: nil -*-
+#+PROPERTY: header-args :eval never-export
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/site.css" >
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:t html-preamble:t
+#+OPTIONS: H:3 num:nil ^:nil _:nil tags:not-in-toc
+#+TITLE: Spring MVC Tutorials 05 - Creating first Spring MVC Web Application using Eclipse IDE (01)
+#+AUTHOR: yiddishkop
+#+EMAIL: yiddishkop@163.com
+
+
+4 simple steps:
+
+1. Modify web.xml file
+2. Create spring-dispatcher-servlet.xml
+3. create the HelloController.java class (A controller)
+4. Create the HelloPage.jsp file (A View)
+
+
+In any web project you develop using servlet technology, you will always need to
+place a file called ~web.xml~ under ~WEB-INFO~ folder. The main purpose of the
+file is to just *map* the input *URL* request to an *appropriate servlet* which
+the server can serve the request.
+
+
+Why we need this.
+
+Because Spring MVC framework is actually using *servlet technology* as its space.
+So you always need to put the ~.xml~ file in the web project developed using
+spring MVC framework.
+
+
+* 1. Modify web.xml file
+
+
+#+NAME: web.xml
+#+BEGIN_SRC xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>FirstSrpingMVCProject</display-name>
+
+  <servlet>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>spring-dispatcher</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+</web-app>
+#+END_SRC
+
+This code is simply telling servlet technology that all URL requests to the web
+application should be map to Spring MVC framework for further processing.
+
+Here you're telling us of the technology that once you receive any URL request
+just map the *URL* request to something called *Front Controller*, also called
+"~DispatcherServlet~"
+
+
+#+NAME: web.xml
+#+BEGIN_EXAMPLE
+                      dispatcher name
+  <servlet>       ----------------
+    <servlet-name>spring-dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  </servlet>       -------------------------------------------------
+                             dispatcher class
+
+  <servlet-mapping>
+                      dispatcher name
+                  -----------------
+    <servlet-name>spring-dispatcher</servlet-name>
+    <url-pattern>/</url-pattern>
+                --
+                the URL dispatcher take charge of
+  </servlet-mapping>
+
+#+END_EXAMPLE
+
+
+After that the *front controller* will take the complete responsibility of
+processing the URL requests and sending back the response to the clients browser
+with the help of all its *helpers* around it.
+
+In order to make *front controller* work, and take charge of controlling the
+overall application we will need to provide all relevant information to it in a
+file called as ~spring-dispatches-servlet.xml~
+
+
+* 2. Create spring-dispatcher-servlet.xml
+
+put all relevant information in this file, which the *front controller* would
+need to manage this overall application.
+
+#+NAME: spring-dispatcher-servlet.xml
+#+BEGIN_SRC xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+              http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  <bean id="HanlderMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+
+  <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+
+  <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+    <property name="prefix">
+      <value>/WEB-INF</value>
+    </property>
+
+    <property name="suffix">
+      <value>.jsp</value>
+    </property>
+  </bean>
+
+</beans>
+#+END_SRC
+
+
+There are *3* sections, each section is *conveying* a *specific information* to
+the *front controller*: handler, resolver, generator.
+
+#+BEGIN_EXAMPLE
+                                  - handler
+                                  - resolver
+                                  - generator
+spring-dispatcher-servlet.xml --------------------------> FrontController
+#+END_EXAMPLE
+
+
+** HandlerMapping
+
+#+BEGIN_EXAMPLE
+  <bean id="HandlerMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+#+END_EXAMPLE
+
+This section tells *front controller* which *HandlerMapping* to use, whose job
+is to just _scan the input URL and tell the front controller which data generate
+a class to be called for further processing the request._
+
+
+** ViewResolver
+#+BEGIN_EXAMPLE
+  <bean id="viewResolver" class ="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+    <property name="prefix">
+      <value>/WEB-INF</value>
+    </property>
+    <property name="suffix">
+      <value>.jsp</value>
+    </property>
+  </bean>
+#+END_EXAMPLE
+
+This section is telling which *ViewResolver* to use whose job is to just tell
+the _exact location of the view_ present in their project.
+
+
+** Controller(or called Data Generator)
+#+BEGIN_EXAMPLE
+  <bean name="/welcome.html" class="com.gontuseries.hellocontroller.HelloController" />
+#+END_EXAMPLE
+
+This section is the *controller* or *data generator* class which you are seeing
+here in the diagram.
+
+* 3/4. create a controller and view
+
+- Create the HelloController.java class (A controller)
+- Create the HelloPage.jsp file (A View)
+
+Hiarachical of project is shown as below:
+
+create ~WEB-INFO/HelloPage.jsp~ and ~src/xxxx/HelloController.java~
+
+we will code next lecture.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-11-26 21:06:10
+[[file:3/4. create a controller and view/screenshot_2018-11-26_21-06-10.png]]
+
