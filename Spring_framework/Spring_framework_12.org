@@ -4,8 +4,8 @@
 
 In short, Spring instantiates and destroy Bean for us in our application
 *automatically*. So we do not need to bother about how it does so. But sometime
-you may wish to perform certain actions *immediately after* instantiates any
-bean and *just before* a bean destruction by spring framework, that's the
+you may wish to *perform certain actions immediately after* _instantiates_ any
+bean and *just before* a bean _destruction_ by spring framework, that's the
 content of this lecture.
 
 

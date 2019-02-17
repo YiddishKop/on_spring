@@ -1,13 +1,14 @@
 #+TITLE: lec-14: A BeanPostProcessor concept in Spring
 
-A BeanPostProcessor is a class which allow you to modify a bean's instance to
+A *BeanPostProcessor* is a class which allow you to modify a bean's instance to
 perform any tasks once it's created by Spring Container(simply speaking, Spring
 framework)
 
-Simply speaking, you write certain code in the BeanPostProcessor, Spring execute
-this code after construction and initialization of every Bean object declared in
-SpringConfig.xml file. Assume you declare 10 Bean definition in configuratin
-file, then this piece of code of BeanPostProcessor will be executed 10 times.
+Simply speaking, you write certain code in the *BeanPostProcessor*, Spring
+execute this code after construction and initialization of every Bean object
+declared in ~SpringConfig.xml~ file. Assume you declare 10 Bean definition in
+configuratin file, then this piece of code of *BeanPostProcessor* will be
+executed 10 times.
 
 
 #+BEGIN_EXAMPLE

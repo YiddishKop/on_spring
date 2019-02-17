@@ -2,14 +2,14 @@
 
 
 If you have *more than one BeanPostProcessor* in your application, then what is
-the really order spring calls each BeanPostProcessor before and after each Bean
-obj initializaiton.
+the really order spring calls each *BeanPostProcessor* before and after each
+Bean obj initializaiton.
 
-And if you want the order of the BeanPostProcessor, what should do.
+And if you want the order of the *BeanPostProcessor*, what should do.
 
-You can provide your customize order in every BeanPostProcessor class by
+You can provide your customize order in every *BeanPostProcessor* class by
 implements ~Ordered~ interface. Spring will consider that order value, and reset
-the order of calling BeanPostProcessor.
+the order of calling *BeanPostProcessor*.
 
 * 源码
 
@@ -86,34 +86,34 @@ public class DemoBeanPostProcessor2 implements BeanPostProcessor, Ordered{
 
 #+NAME: DemoBeanPostProcessor1
 #+BEGIN_SRC java
-package org.gontuseries.springcore;
+  package org.gontuseries.springcore;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.core.Ordered;
+  import org.springframework.beans.BeansException;
+  import org.springframework.beans.factory.config.BeanPostProcessor;
+  import org.springframework.core.Ordered;
 
-public class DemoBeanPostProcessor1 implements BeanPostProcessor, Ordered{
-	// just record initialization for this Bean object
-    // arg0 is the actually Bean object, arg1 is the Bean name
-    // by this method you can modify Bean object.
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException{
-        System.out.println("DBP1: processing bean instance after initialization(i.e just after init life cycle bean) of: " + beanName);
-        return bean;
-    }
+  public class DemoBeanPostProcessor1 implements BeanPostProcessor, Ordered{
+      // just record initialization for this Bean object
+      // arg0 is the actually Bean object, arg1 is the Bean name
+      // by this method you can modify Bean object.
+      @Override
+      public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException{
+          System.out.println("DBP1: processing bean instance after initialization(i.e just after init life cycle bean) of: " + beanName);
+          return bean;
+      }
 
-    // will be executed before Bean object is initialized completely
-    @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException{
-        System.out.println("DBP1: processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: " + beanName);
-        return bean;
-    }
+      // will be executed before Bean object is initialized completely
+      @Override
+      public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException{
+          System.out.println("DBP1: processing bean instance before initialization(i.e after spring instantiates bean and before init life cycle bean) of: " + beanName);
+          return bean;
+      }
 
-    @Override
-    public int getOrder(){
-        return 0; // the smaller the front it'll be called
-    }
-}
+      @Override
+      public int getOrder(){
+          return 0; // the smaller the front it'll be called
+      }
+  }
 #+END_SRC
 
 #+NAME: SpringConfig
